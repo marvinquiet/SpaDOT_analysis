@@ -10,6 +10,9 @@
 *.pt # model
 *.csv
 *.pdf
+*.npy
+*.h5ad
+*.zip
 data/
 results/
 *results/ 
