@@ -7,12 +7,15 @@
 *.h5
 *.png
 *.RDS
+*.rds
 *.pt # model
 *.csv
 *.pdf
 *.npy
 *.h5ad
 *.zip
+*.gmt
+*.gmx
 data/
 results/
 *results/ 
