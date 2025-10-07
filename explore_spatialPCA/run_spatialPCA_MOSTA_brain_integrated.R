@@ -10,7 +10,7 @@ library(aricode)
 library(ggplot2)
 library(rhdf5)
 
-source('/media/sda/wenjinma/projects/spatialATAC-explore/explore_spatialPCA_simulation/utils.R')
+source('utils.R')
 
 base_dir = '/media/sda/wenjinma'
 project_dir = file.path(base_dir, "projects/spatialATAC-explore")
