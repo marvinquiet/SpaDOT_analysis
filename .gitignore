@@ -1,0 +1,16 @@
+## project related
+*.out
+*.err
+*.swp
+*.txt
+*.mat
+*.h5
+*.png
+*.RDS
+*.pt # model
+*.csv
+*.pdf
+data/
+results/
+*results/ 
+summarize_benchmark/simulation_figures/*
