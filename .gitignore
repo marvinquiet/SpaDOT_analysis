@@ -19,7 +19,8 @@
 data/
 results/
 *results/ 
-summarize_benchmark/simulation_figures/*
+*figures/
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
