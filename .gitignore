@@ -1,6 +1,9 @@
 # Ignore everything
 *
 
+# Allow directories
+!*/
+
 # But keep these file types
 !*.py
 !*.R
