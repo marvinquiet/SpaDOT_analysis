@@ -5,26 +5,24 @@ import pandas as pd
 from method_utils import *
 import utils
 
-base_dir = "/media/sda/wenjinma"
-# base_dir = "/net/mulan/home/wenjinma"
-result_dir = base_dir+os.sep+"projects/spatialATAC-explore"
-figure_dir = base_dir+os.sep+"projects/spatialATAC-explore/summarize_benchmark/ATAC-Visium_noremoval_figures/spatial_layout"
+base_dir = "/net/mulan/home/wenjinma"
+result_dir = base_dir+os.sep+"projects/SpaDOT_analysis"
+figure_dir = base_dir+os.sep+"projects/SpaDOT_analysis/summarize_benchmark/figures/ATAC-Visium_noremoval_figures/spatial_layout"
 if not os.path.exists(figure_dir):
     os.makedirs(figure_dir)
 
-latent_dir = base_dir+os.sep+"projects/spatialATAC-explore/summarize_benchmark/ATAC-Visium_noremoval_figures/latent_layout"
+latent_dir = base_dir+os.sep+"projects/SpaDOT_analysis/summarize_benchmark/figures/ATAC-Visium_noremoval_figures/latent_layout"
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-methods = ["GATVAE-SVGP-VAE", "spatialPCA", "GraphST", "SEDR", "spaGCN", "spaVAE", "STAligner", "PRECAST", "spatiAlign", "SPIRAL", "STADIA"]
-#annotation_key = "seurat_clusters_harmony"
+methods = ["SpaDOT", "spatialPCA", "GraphST", "SEDR", "spaGCN", "spaVAE", "STAligner", "PRECAST", "spatiAlign", "SPIRAL", "STADIA", "STAMP"]
 annotation_key = "annotation"
 
 # --- analyze data complexity
-data_dir = base_dir+os.sep+"data/spatial_scRNAseq_GSE214989"
+data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_scRNAseq_GSE214989"
 # analyze_ATACVisium_complexity(data_dir)
 result_prefix = "ATAC-Visium_noremoval_results"
-# spaDOT_res = analyze_spaDOT_domains(result_dir, result_prefix, method="spaDOT",
+# spaDOT_res = analyze_spaDOT_domains(result_dir, result_prefix, method="SpaDOT",
 #                                     label_key=annotation_key,
 #                                     rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
 # utils.visualize_ATACVisium_spatial(spaDOT_res, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT")
@@ -34,31 +32,30 @@ result_prefix = "ATAC-Visium_noremoval_results"
 # utils.visualize_ATACVisium_spatial(spaDOT_res, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="true_labels", result_dir=figure_dir, method="GT_combined")
 
 # --- split spaDOT results into two parts
-spaDOT_SVGP_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
-                                    label_key=annotation_key,
-                                    rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
-                                    latent_index=list(range(10)))
-utils.visualize_ATACVisium_spatial(spaDOT_SVGP_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_SVGP", height=6)
+# spaDOT_SVGP_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
+#                                     label_key=annotation_key,
+#                                     rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
+#                                     latent_index=list(range(10)))
+# utils.visualize_ATACVisium_spatial(spaDOT_SVGP_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_SVGP", height=6)
 # utils.visualize_latent(spaDOT_SVGP_adata, use_rep_key='X', result_dir=latent_dir, method="spaDOT_SVGPVAE")
-spaDOT_SVGP_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"SVGPVAE_predictions.csv")
+# spaDOT_SVGP_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"SVGPVAE_predictions.csv")
 
-spaDOT_GAT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
-                                    label_key=annotation_key,
-                                    rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
-                                    latent_index=list(range(11, 20)))
-utils.visualize_ATACVisium_spatial(spaDOT_GAT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_GAT", height=6)
-# utils.visualize_latent(spaDOT_GAT_adata, use_rep_key='X', result_dir=latent_dir, method="spaDOT_GATVAE")
-spaDOT_GAT_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"GATVAE_predictions.csv")
+# spaDOT_GAT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
+#                                     label_key=annotation_key,
+#                                     rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
+#                                     latent_index=list(range(11, 20)))
+# utils.visualize_ATACVisium_spatial(spaDOT_GAT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_GAT", height=6)
+# # utils.visualize_latent(spaDOT_GAT_adata, use_rep_key='X', result_dir=latent_dir, method="spaDOT_GATVAE")
+# spaDOT_GAT_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"GATVAE_predictions.csv")
 
 # --- start analyzing results
-method = "GATVAE-SVGP-VAE"
-spaDOT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method=method,
+spaDOT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="SpaDOT",
                                     label_key=annotation_key,
                                     rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
-utils.visualize_ATACVisium_spatial(spaDOT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method=method)
+# utils.visualize_ATACVisium_spatial(spaDOT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method=method)
 # utils.visualize_latent(spaDOT_adata, use_rep_key='X', result_dir=latent_dir, method=method)
 # visualize ground truth
-utils.visualize_ATACVisium_spatial(spaDOT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="true_labels", result_dir=figure_dir, method="GT", height=6)
+# utils.visualize_ATACVisium_spatial(spaDOT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="true_labels", result_dir=figure_dir, method="GT", height=6)
 
 
 # # --- calculate spatial continuity metrics for GT
@@ -87,13 +84,13 @@ utils.visualize_ATACVisium_spatial(spaDOT_adata.obs, coord_x_key="pixel_x", coor
 spatialPCA_adata = analyze_spatialPCA_domains(result_dir, result_prefix,
                            label_key=annotation_key, 
                            rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels", "row": "pixel_x", "col": "pixel_y"})
-utils.visualize_ATACVisium_spatial(spatialPCA_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spatialPCA")
+# utils.visualize_ATACVisium_spatial(spatialPCA_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spatialPCA")
 # utils.visualize_latent(spatialPCA_adata, use_rep_key='X', result_dir=latent_dir, method="spatialPCA")
 
 GraphST_adata = analyze_GraphST_domains(result_dir, result_prefix,
                                       label_key=annotation_key, 
                                       rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
-utils.visualize_ATACVisium_spatial(GraphST_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="GraphST")
+# utils.visualize_ATACVisium_spatial(GraphST_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="GraphST")
 # utils.visualize_latent(GraphST_adata, use_rep_key='emb', result_dir=latent_dir, method="GraphST")
 
 SEDR_adata = analyze_SEDR_domains(result_dir, result_prefix, label_key=annotation_key,
@@ -136,16 +133,20 @@ STADIA_adata = analyze_STADIA_domains(result_dir, result_prefix, label_key=annot
 utils.visualize_ATACVisium_spatial(STADIA_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="STADIA")
 # utils.visualize_latent(STADIA_adata, use_rep_key='X', result_dir=latent_dir, method="STADIA")
 
-# --- combine results from all domains
-# method_results_list = []
-# for method in methods:
-#     method_result_dir = result_dir+os.sep+"explore_"+method+os.sep+result_prefix
-#     method_results = pd.read_csv(method_result_dir+os.sep+method
-#     +"_domain_metrics.csv", index_col=0)
-#     method_results = method_results.reset_index()
-#     method_results_long = pd.melt(method_results, id_vars=['index'], var_name='timepoint', value_name='value')
-#     method_results_long['method'] = method
-#     method_results_list.append(method_results_long)
-# final_method_results = pd.concat(method_results_list)
-# final_method_results.to_csv(os.path.dirname(figure_dir)+os.sep+"final_ATAC-Visium_noremoval_domain_metrics.csv")
+STAMP_adata = analyze_STAMP_domains(result_dir, result_prefix, label_key=annotation_key,
+                       rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
 
+
+
+# --- combine results from all domains
+method_results_list = []
+for method in methods:
+    method_result_dir = result_dir+os.sep+"explore_"+method+os.sep+result_prefix
+    method_results = pd.read_csv(method_result_dir+os.sep+method
+    +"_domain_metrics.csv", index_col=0)
+    method_results = method_results.reset_index()
+    method_results_long = pd.melt(method_results, id_vars=['index'], var_name='timepoint', value_name='value')
+    method_results_long['method'] = method
+    method_results_list.append(method_results_long)
+final_method_results = pd.concat(method_results_list)
+final_method_results.to_csv(os.path.dirname(figure_dir)+os.sep+"final_ATAC-Visium_noremoval_domain_metrics.csv")

@@ -1,4 +1,5 @@
-Sys.setenv(RETICULATE_PYTHON = "/media/sda/wenjinma/envs/spatialATAC/bin/python")
+Sys.setenv(RETICULATE_PYTHON = "/net/mulan/home/wenjinma/envs/spatialATAC/bin/python")
+.libPaths("/net/mulan/home/wenjinma/Rlib")
 library(reticulate)
 
 library(VennDiagram)
@@ -14,13 +15,13 @@ library(dplyr)
 library(stringr)
 source('ChickenHeart_utils.R')
 
-base_dir = "/media/sda/wenjinma"
-result_dir = file.path(base_dir, "projects/spatialATAC-explore")
-spatial_layout_dir = file.path(result_dir, "summarize_benchmark/ChickenHeart_figures/spatial_layout")
+base_dir = "/net/mulan/home/wenjinma"
+result_dir = file.path(base_dir, "projects/SpaDOT_analysis")
+spatial_layout_dir = file.path(result_dir, "summarize_benchmark/figures/ChickenHeart_figures/spatial_layout")
 dir.create(spatial_layout_dir, showWarnings = FALSE, recursive = TRUE)
-downstream_dir = file.path(result_dir, "summarize_benchmark/ChickenHeart_figures/ChickenHeart_downstream")
+downstream_dir = file.path(result_dir, "summarize_benchmark/figures/ChickenHeart_figures/ChickenHeart_downstream")
 dir.create(downstream_dir, showWarnings = FALSE, recursive = TRUE)
-latent_adata = read_h5ad(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results', 'prediction_adata.h5ad'))
+latent_adata = read_h5ad(file.path(result_dir, 'explore_SpaDOT', 'ChickenHeart_results', 'prediction_adata.h5ad'))
 
 
 annotations = unique(latent_adata$obs$true_labels)
@@ -192,6 +193,12 @@ STADIA_latent$obs_names = sub("^[^.]*\\.", "", STADIA_latent$obs_names)
 latent_adata$obs$STADIA_pred_labels = STADIA_latent$obs[latent_adata$obs_names, 'pred_labels']
 plot_pred_label(latent_adata, color_col='STADIA_pred_labels', file_name=file.path(spatial_layout_dir, 'STADIA_prediction.png'))
 
+# STAMP 
+STAMP_latent = read_h5ad(file.path(result_dir, 'explore_STAMP', 'ChickenHeart_results', 'prediction_adata.h5ad'))
+latent_adata$obs$STAMP_pred_labels = STAMP_latent$obs[latent_adata$obs_names, 'pred_labels']
+plot_pred_label(latent_adata, color_col='STAMP_pred_labels', file_name=file.path(spatial_layout_dir, 'STAMP_prediction.png'))
+
+
 # load SVGP results
 SVGP_latent = read.csv(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results', 'SVGPVAE_predictions.csv'), header=T, row.names=1)
 latent_adata$obs$SVGP_pred_labels = SVGP_latent[latent_adata$obs_names, 'pred_labels']
@@ -206,10 +213,9 @@ plot_pred_label(latent_adata, color_col='GAT_pred_labels', file_name=file.path(s
 # --- compute lisi
 domain_metrics_df = read.csv(file.path(dirname(spatial_layout_dir), "final_ChickenHeart_domain_metrics.csv"), header=T)
 domain_metrics_df$X = NULL
-domain_metrics_df$method[domain_metrics_df$method == 'GATVAE-SVGP-VAE'] = 'SpaDOT'
 methods = unique(domain_metrics_df$method)
 # method_color_palette = c("#F21A00", "#F3DF6C", "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#046C9A", "#D69C4E", "#ABDDDE", "#446455")
-method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae")
+method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae", "#ABDDDE")
 customized_method_colors = method_color_palette[1:length(unique(domain_metrics_df$method))]
 names(customized_method_colors) = unique(domain_metrics_df$method)
 
@@ -233,7 +239,7 @@ for (tp in timepoints) {
     }
 }
 # domain_metrics_df$method = factor(domain_metrics_df$method, levels=unique(domain_metrics_df$method))
-domain_metrics_df$method = factor(domain_metrics_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST'))
+domain_metrics_df$method = factor(domain_metrics_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST', 'STAMP'))
 metric_df = domain_metrics_df[domain_metrics_df$index == 'median-LISI', ]
 metric_df$value = as.numeric(metric_df$value)
 # compute average
@@ -297,7 +303,7 @@ for (metric in unique(domain_metrics_df$index)) {
         theme_pubr() +
         theme(axis.text.x = element_blank()) + xlab(NULL) + ylab(metric)
     p = p + guides(color = guide_legend(nrow = 4, title=NULL), shape=guide_legend(nrow=4, title=NULL))
-    legend = get_plot_component(p, "guide-box", return_all=TRUE)[[4]]
+    legend = get_legend(p)
     ggsave(file.path(dirname(spatial_layout_dir), 'legend.pdf'), plot=legend, width=6, height=2)
     p = p + theme(legend.position="none")
     ggsave(file.path(dirname(spatial_layout_dir), paste0(metric, ".pdf")), plot=p, width=4, height=3.5)

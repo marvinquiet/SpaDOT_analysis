@@ -5,42 +5,41 @@ import pandas as pd
 from method_utils import *
 import utils
 
-base_dir = "/media/sda/wenjinma"
-# base_dir = "/net/mulan/home/wenjinma"
-result_dir = base_dir+os.sep+"projects/spatialATAC-explore"
-figure_dir = base_dir+os.sep+"projects/spatialATAC-explore/summarize_benchmark/ChickenHeart_figures/spatial_layout"
+base_dir = "/net/mulan/home/wenjinma"
+result_dir = base_dir+os.sep+"projects/SpaDOT_analysis"
+figure_dir = base_dir+os.sep+"projects/SpaDOT_analysis/summarize_benchmark/figures/ChickenHeart_figures/spatial_layout"
 if not os.path.exists(figure_dir):
     os.makedirs(figure_dir)
-latent_dir = base_dir+os.sep+"projects/spatialATAC-explore/summarize_benchmark/ChickenHeart_figures/latent_layout"
+latent_dir = base_dir+os.sep+"projects/SpaDOT_analysis/summarize_benchmark/figures/ChickenHeart_figures/latent_layout"
 if not os.path.exists(latent_dir):
     os.makedirs(latent_dir)
 
-methods = ["GATVAE-SVGP-VAE", "spatialPCA", "GraphST", "SEDR", "spaGCN", "spaVAE", "STAligner", "PRECAST", "spatiAlign", "SPIRAL", "STADIA"]
+methods = ["SpaDOT", "spatialPCA", "GraphST", "SEDR", "spaGCN", "spaVAE", "STAligner", "PRECAST", "spatiAlign", "SPIRAL", "STADIA", 'STAMP']
 annotation_key = "annotation"
 
 # --- analyze data complexity
-data_dir = base_dir+os.sep+"data/spatial_ChickenHeart"
+data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_ChickenHeart"
 result_prefix = "ChickenHeart_results"
 
 # --- split spaDOT results into two parts
-spaDOT_SVGP_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
-                                    label_key=annotation_key,
-                                    rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
-                                    latent_index=list(range(10)))
-utils.visualize_spatial(spaDOT_SVGP_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_SVGP", height=6)
-utils.visualize_latent(spaDOT_SVGP_adata, use_rep_key='X', result_dir=latent_dir, method="spaDOT_SVGPVAE")
-spaDOT_SVGP_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"SVGPVAE_predictions.csv")
+# spaDOT_SVGP_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
+#                                     label_key=annotation_key,
+#                                     rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
+#                                     latent_index=list(range(10)))
+# utils.visualize_spatial(spaDOT_SVGP_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_SVGP", height=6)
+# utils.visualize_latent(spaDOT_SVGP_adata, use_rep_key='X', result_dir=latent_dir, method="spaDOT_SVGPVAE")
+# spaDOT_SVGP_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"SVGPVAE_predictions.csv")
 
-spaDOT_GAT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
-                                    label_key=annotation_key,
-                                    rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
-                                    latent_index=list(range(11, 20)))
-utils.visualize_spatial(spaDOT_GAT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_GAT", height=6)
-utils.visualize_latent(spaDOT_GAT_adata, use_rep_key='X', result_dir=latent_dir, method="spaDOT_GATVAE")
-spaDOT_GAT_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"GATVAE_predictions.csv")
+# spaDOT_GAT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
+#                                     label_key=annotation_key,
+#                                     rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"},
+#                                     latent_index=list(range(11, 20)))
+# utils.visualize_spatial(spaDOT_GAT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="spaDOT_GAT", height=6)
+# utils.visualize_latent(spaDOT_GAT_adata, use_rep_key='X', result_dir=latent_dir, method="spaDOT_GATVAE")
+# spaDOT_GAT_adata.obs.to_csv(result_dir+os.sep+"explore_GATVAE-SVGP-VAE"+os.sep+result_prefix+os.sep+"GATVAE_predictions.csv")
 
 # --- start analyzing results
-spaDOT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="GATVAE-SVGP-VAE",
+spaDOT_adata = analyze_spaDOT_domains(result_dir, result_prefix, method="SpaDOT",
                                     label_key=annotation_key,
                                     rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
 utils.visualize_spatial(spaDOT_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="GATVAE-SVGP-VAE")
@@ -98,6 +97,10 @@ utils.visualize_latent(SPIRAL_adata, use_rep_key='spiral', result_dir=latent_dir
 STADIA_adata = analyze_STADIA_domains(result_dir, result_prefix, label_key=annotation_key, rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
 utils.visualize_spatial(STADIA_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=figure_dir, method="STADIA")
 utils.visualize_latent(STADIA_adata, use_rep_key='X', result_dir=latent_dir, method="STADIA")
+
+STAMP_adata = analyze_STAMP_domains(result_dir, result_prefix, label_key=annotation_key,
+                       rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
+
 
 # --- combine results from all domains
 method_results_list = []

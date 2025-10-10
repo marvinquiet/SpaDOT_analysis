@@ -12,9 +12,10 @@ option_list = list(
 parser = OptionParser(option_list=option_list)
 opt = parse_args(parser)
 dataset = opt$dataset
-figure_dir = paste0(dataset, "_figures")
+figure_dir = file.path('/net/mulan/home/wenjinma/projects/SpaDOT_analysis/summarize_benchmark/figures', 
+    paste0(dataset, "_figures"))
 
-method_color_palette = c("#F3DF6C", "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#046C9A", "#D69C4E", "#ABDDDE", "#000000", "#446455")
+method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae", "#ABDDDE")
 fill_color_palette = c("gray90", "gray80", "gray70", "gray60", "gray50", "gray40", "gray30", "gray20", "gray10")
 plot_domain_metrics = function(domain_metrics_df, figure_dir, dataset) {
     # set colors
@@ -59,7 +60,6 @@ plot_domain_metrics = function(domain_metrics_df, figure_dir, dataset) {
 if (dataset == 'ATAC-Visium' || dataset == 'ATAC-Visium_noremoval' || dataset == 'Axolotl' || dataset == 'ChickenHeart') {
     domain_metrics_df = read.csv(file.path(figure_dir, paste0("final_", dataset, "_domain_metrics.csv")), header=T)
     # rename one of the methods name
-    domain_metrics_df$method[domain_metrics_df$method == 'GATVAE-SVGP-VAE'] = 'spaDOT'
     plot_domain_metrics(domain_metrics_df, figure_dir, dataset)
 
 } else if (dataset == 'simulation') {
@@ -69,7 +69,6 @@ if (dataset == 'ATAC-Visium' || dataset == 'ATAC-Visium_noremoval' || dataset ==
         simulation_figure_dir = file.path(figure_dir, simulation_comb)
         domain_metrics_df = read.csv(file.path(simulation_figure_dir, "final_simulation_domain_metrics.csv"), header=T)
             # rename one of the methods name
-        domain_metrics_df$method[domain_metrics_df$method == 'GATVAE-SVGP-VAE'] = 'spaDOT'
         plot_domain_metrics(domain_metrics_df, simulation_figure_dir, dataset)
     }
 } else {
@@ -78,6 +77,6 @@ if (dataset == 'ATAC-Visium' || dataset == 'ATAC-Visium_noremoval' || dataset ==
 
 
 # Usage
-# Rscript plot_domain_metrics.R --dataset ATAC-Visium
+# Rscript plot_domain_metrics.R --dataset ATAC-Visium_noremoval
 # Rscript plot_domain_metrics.R --dataset Axolotl
 # Rscript plot_domain_metrics.R --dataset simulation

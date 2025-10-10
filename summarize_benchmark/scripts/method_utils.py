@@ -430,6 +430,35 @@ def analyze_STADIA_domains(result_dir, result_prefix,
     STADIA_adata.write_h5ad(STADIA_results_dir+os.sep+'prediction_adata.h5ad')
     return STADIA_adata
 
+
+def analyze_STAMP_domains(result_dir, result_prefix,
+                           label_key="label",
+                           rename_dict={"label": "true_labels", "cluster": "pred_labels"}):
+    # --- STAMP ---
+    STAMP_results_dir = result_dir+os.sep+"explore_STAMP"+os.sep+result_prefix
+    STAMP_results_df = pd.read_csv(STAMP_results_dir+os.sep+'STAMP_topic_proportions.csv', index_col=0)
+    STAMP_cols = [f"Topic{i}" for i in range(1, 21)]
+    STAMP_results_list = []
+    kmeans_dict = dict()
+    for tp in set(STAMP_results_df['timepoint']):
+        tp_STAMP_results = STAMP_results_df[STAMP_results_df['timepoint']==tp]
+        tp_emb = tp_STAMP_results.loc[:, STAMP_cols].to_numpy()
+        tp_kmeans = KMeans(n_clusters=len(set(tp_STAMP_results[label_key])), random_state=0).fit(tp_emb)
+        tp_STAMP_results['kmeans'] = tp_kmeans.labels_.astype(str)
+        STAMP_results_list.append(tp_STAMP_results)
+        kmeans_dict[tp] = tp_kmeans
+    STAMP_results = pd.concat(STAMP_results_list)
+    STAMP_results.rename(columns=rename_dict, inplace=True)
+    analyze_domain_metrics(STAMP_results, STAMP_results_dir, "STAMP")
+    try:
+        compute_OT_heatmap(kmeans_dict, STAMP_results_dir, method='STAMP')
+    except RuntimeError as e:
+        print(f"Runtime Error: {e}")
+    STAMP_adata = anndata.AnnData(STAMP_results.loc[:, STAMP_cols].to_numpy(), obs=STAMP_results)
+    STAMP_adata.write_h5ad(STAMP_results_dir+os.sep+'prediction_adata.h5ad')
+    return STAMP_adata
+
+
 # --- analyze latent space of each method
 def analyze_spatialPCA_latent(result_dir, result_prefix):
     # --- SpatialPCA latent --- 
@@ -537,3 +566,12 @@ def analyze_STADIA_latent(result_dir, result_prefix, color_key=['timepoint', 'an
     STADIA_latent = STADIA_results.iloc[:, :35]
     # analyze latent
     analyze_latent_metrics(STADIA_latent, STADIA_results[['timepoint']], STADIA_results_dir, "STADIA")
+
+def analyze_STAMP_latent(result_dir, result_prefix, color_key=['timepoint', 'annotation']):
+    # --- STAMP latent ---
+    STAMP_results_dir = result_dir+os.sep+"explore_STAMP"+os.sep+result_prefix
+    STAMP_results = pd.read_csv(STAMP_results_dir+os.sep+'STAMP_topic_proportions.csv', index_col=0)
+    STAMP_cols = [f"Topic{i}" for i in range(1, 21)]
+    STAMP_latent = STAMP_results.loc[:, STAMP_cols]
+    # analyze latent
+    analyze_latent_metrics(STAMP_latent, STAMP_results[['timepoint']], STAMP_results_dir, "STAMP")

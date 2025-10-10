@@ -1,4 +1,5 @@
-Sys.setenv(RETICULATE_PYTHON = "/media/sda/wenjinma/envs/spatialATAC/bin/python")
+Sys.setenv(RETICULATE_PYTHON = "/net/mulan/home/wenjinma/envs/spatialATAC/bin/python")
+.libPaths("/net/mulan/home/wenjinma/Rlib")
 library(reticulate)
 
 library(VennDiagram)
@@ -18,13 +19,13 @@ library(clusterProfiler)
 library(org.Mm.eg.db)
 source('ATACVisium_utils.R')
 
-base_dir = "/media/sda/wenjinma"
-result_dir = file.path(base_dir, "projects/spatialATAC-explore")
-spatial_layout_dir = file.path(result_dir, "summarize_benchmark/ATAC-Visium_noremoval_figures/spatial_layout")
+base_dir = "/net/mulan/home/wenjinma"
+result_dir = file.path(base_dir, "projects/SpaDOT_analysis")
+spatial_layout_dir = file.path(result_dir, "summarize_benchmark/figures/ATAC-Visium_noremoval_figures/spatial_layout")
 dir.create(spatial_layout_dir, showWarnings = FALSE, recursive = TRUE)
-downstream_dir = file.path(result_dir, "summarize_benchmark/ATAC-Visium_noremoval_figures/ATAC-Visium_noremoval_downstream")
+downstream_dir = file.path(result_dir, "summarize_benchmark/figures/ATAC-Visium_noremoval_figures/ATAC-Visium_noremoval_downstream")
 dir.create(downstream_dir, showWarnings = FALSE, recursive = TRUE)
-latent_adata = read_h5ad(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ATAC-Visium_noremoval_results', 'prediction_adata.h5ad'))
+latent_adata = read_h5ad(file.path(result_dir, 'explore_SpaDOT', 'ATAC-Visium_noremoval_results', 'prediction_adata.h5ad'))
 latent_adata$obs$pixel_x_bak = latent_adata$obs$pixel_x
 latent_adata$obs$pixel_y_bak = latent_adata$obs$pixel_y
 
@@ -139,19 +140,14 @@ plot_pred_label(latent_adata$obs, color_col='STADIA_pred_labels', color_legend_t
 # --- plot metrics and compute LISI
 domain_metrics_df = read.csv(file.path(dirname(spatial_layout_dir), "final_ATAC-Visium_noremoval_domain_metrics.csv"), header=T)
 domain_metrics_df$X = NULL
-domain_metrics_df$method[domain_metrics_df$method == 'GATVAE-SVGP-VAE'] = 'SpaDOT'
 methods = unique(domain_metrics_df$method)
-# method_color_palette = c("#F21A00", "#F3DF6C", "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#046C9A", "#D69C4E", "#ABDDDE", "#446455")
-method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae")
+# method_color_palette = c("#F21A00", "#F3DF6C", "#00A08A", "#1b1811ff", "#F98400", "#5BBCD6", "#ECCBAE", "#046C9A", "#D69C4E", "#ABDDDE", "#446455")
+method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae", "#ABDDDE")
 customized_method_colors = method_color_palette[1:length(unique(domain_metrics_df$method))]
 names(customized_method_colors) = unique(domain_metrics_df$method)
 library(lisi)
 for (method in methods) {
-    if (method == 'SpaDOT') {
-        pred_adata = read_h5ad(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ATAC-Visium_noremoval_results', 'prediction_adata.h5ad'))
-    } else {
-        pred_adata = read_h5ad(file.path(result_dir, paste0('explore_', method), 'ATAC-Visium_noremoval_results','prediction_adata.h5ad'))
-    }
+    pred_adata = read_h5ad(file.path(result_dir, paste0('explore_', method), 'ATAC-Visium_noremoval_results','prediction_adata.h5ad'))
     for (tp in unique(pred_adata$obs$timepoint)) {
         tp_pred_adata = pred_adata[pred_adata$obs$timepoint == tp, ]
         locations = data.frame(x=tp_pred_adata$obs$pixel_x, y=tp_pred_adata$obs$pixel_y)
@@ -161,7 +157,7 @@ for (method in methods) {
     }
 }
 # domain_metrics_df$method = factor(domain_metrics_df$method, levels=unique(domain_metrics_df$method))
-domain_metrics_df$method = factor(domain_metrics_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST'))
+domain_metrics_df$method = factor(domain_metrics_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST', 'STAMP'))
 domain_metrics_df$value = as.numeric(domain_metrics_df$value)
 for (metric in unique(domain_metrics_df$index)) {
     metric_df = domain_metrics_df[domain_metrics_df$index == metric, ]

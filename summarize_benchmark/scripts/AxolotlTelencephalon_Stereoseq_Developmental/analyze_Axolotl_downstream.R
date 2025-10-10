@@ -1,4 +1,5 @@
-Sys.setenv(RETICULATE_PYTHON = "/media/sda/wenjinma/envs/spatialATAC/bin/python")
+Sys.setenv(RETICULATE_PYTHON = "/net/mulan/home/wenjinma/envs/spatialATAC/bin/python")
+.libPaths("/net/mulan/home/wenjinma/Rlib")
 library(reticulate)
 
 library(VennDiagram)
@@ -18,13 +19,13 @@ C5_gene_sets = msigdbr(species = "human", category = "C5", subcategory = 'GO:BP'
 msigdbr_list = split(x = C5_gene_sets$gene_symbol, f = C5_gene_sets$gs_name)
 source('Axolotl_utils.R')
 
-base_dir = "/media/sda/wenjinma"
-result_dir = file.path(base_dir, "projects/spatialATAC-explore")
-spatial_layour_dir = file.path(result_dir, "summarize_benchmark/Axolotl_figures/spatial_layout")
+base_dir = "/net/mulan/home/wenjinma"
+result_dir = file.path(base_dir, "projects/SpaDOT_analysis")
+spatial_layour_dir = file.path(result_dir, "summarize_benchmark/figures/Axolotl_figures/spatial_layout")
 dir.create(spatial_layour_dir, showWarnings = FALSE, recursive = TRUE)
-downstream_dir = file.path(result_dir, "summarize_benchmark/Axolotl_figures/Axolotl_downstream")
+downstream_dir = file.path(result_dir, "summarize_benchmark/figures/Axolotl_figures/Axolotl_downstream")
 dir.create(downstream_dir, showWarnings = FALSE, recursive = TRUE)
-latent_adata = read_h5ad(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'Axolotl_results', 'prediction_adata.h5ad'))
+latent_adata = read_h5ad(file.path(result_dir, 'explore_SpaDOT', 'Axolotl_results', 'prediction_adata.h5ad'))
 
 
 color_palette = c(
@@ -143,6 +144,13 @@ STADIA_latent$obs_names = paste0(STADIA_latent$obs_names, '_', STADIA_latent$obs
 latent_adata$obs$STADIA_pred_labels = STADIA_latent$obs[latent_adata$obs_names, 'pred_labels']
 plot_pred_label(latent_adata, color_col='STADIA_pred_labels', file_name=file.path(spatial_layour_dir, 'STADIA_prediction.png'))
 
+
+# STAMP 
+STAMP_latent = read_h5ad(file.path(result_dir, 'explore_STAMP', 'Axolotl_results', 'prediction_adata.h5ad'))
+latent_adata$obs$STAMP_pred_labels = STAMP_latent$obs[latent_adata$obs_names, 'pred_labels']
+plot_pred_label(latent_adata, color_col='STAMP_pred_labels', file_name=file.path(spatial_layour_dir, 'STAMP_prediction.png'))
+
+
 # load SVGP results
 SVGP_latent = read.csv(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'Axolotl_results', 'SVGPVAE_predictions.csv'), header=T, row.names=1)
 latent_adata$obs$SVGP_pred_labels = SVGP_latent[latent_adata$obs_names, 'pred_labels']
@@ -185,7 +193,7 @@ calculate_iou = function(y_true, pred_labels) {
     # }
 }
 # --- for all annotations in true labels
-methods = c('SpaDOT', 'SEDR', 'STAligner', 'SPIRAL', 'GraphST', 'spaGCN', 'spaVAE', 'PRECAST', 'STADIA', 'spatiAlign', 'spatialPCA')
+methods = c('SpaDOT', 'SEDR', 'STAligner', 'SPIRAL', 'GraphST', 'spaGCN', 'spaVAE', 'PRECAST', 'STADIA', 'spatiAlign', 'spatialPCA', 'STAMP')
 method_IoU_df = data.frame(matrix(nrow=0, ncol=6))
 colnames(method_IoU_df) = c('method', 'pred_labels', 'overlap', 'IoU', 'timepoint', 'annotation')
 for (tp in unique(latent_adata$obs$timepoint)) {
@@ -252,14 +260,14 @@ filtered_result$overlap = as.numeric(filtered_result$overlap)
 filtered_result$IoU = as.numeric(filtered_result$IoU)
 filtered_result$annotation = as.factor(filtered_result$annotation)
 # method_color_palette = c("#F21A00", "#F3DF6C", "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#046C9A", "#D69C4E", "#ABDDDE", "#446455")
-method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae")
-names(method_color_palette) = c('SpaDOT', 'spatialPCA', 'GraphST', 'SEDR', 'spaGCN', 'spaVAE', 'STAligner', 'PRECAST', 'spatiAlign', 'SPIRAL', 'STADIA')
+method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae", "#ABDDDE")
+names(method_color_palette) = c('SpaDOT', 'spatialPCA', 'GraphST', 'SEDR', 'spaGCN', 'spaVAE', 'STAligner', 'PRECAST', 'spatiAlign', 'SPIRAL', 'STADIA', 'STAMP')
 filtered_result$timepoint_annotation = paste(filtered_result$timepoint, filtered_result$annotation, sep=' - ')
 # subset to only MP, DP, LP related
 selected_annotations = c('t0 - MP&DP&LP', 't1 - MP&DP', 't1 - LP', 't2 - MP', 't2 - DP', 't2 - LP')
 sub_filtered_result = filtered_result[filtered_result$timepoint_annotation %in% selected_annotations, ]
 sub_filtered_result$timepoint_annotation = factor(sub_filtered_result$timepoint_annotation, levels=selected_annotations)
-sub_filtered_result$method = factor(sub_filtered_result$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST'))
+sub_filtered_result$method = factor(sub_filtered_result$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST', 'STAMP'))
 ggplot(sub_filtered_result, aes(x=overlap, y=IoU, color=method)) +
     geom_point(size=2, aes(shape=timepoint)) +
     facet_wrap(~timepoint_annotation, nrow=2, scales='free') +
@@ -409,10 +417,9 @@ ggsave(file.path(downstream_dir, 'MPDPLP_IoU.pdf'), width=8, height=4)
 # --- compute lisi
 domain_metrics_df = read.csv(file.path(dirname(spatial_layour_dir), "final_Axolotl_domain_metrics.csv"), header=T)
 domain_metrics_df$X = NULL
-domain_metrics_df$method[domain_metrics_df$method == 'GATVAE-SVGP-VAE'] = 'SpaDOT'
 methods = unique(domain_metrics_df$method)
 # method_color_palette = c("#F21A00", "#F3DF6C", "#00A08A", "#F2AD00", "#F98400", "#5BBCD6", "#ECCBAE", "#046C9A", "#D69C4E", "#ABDDDE", "#446455")
-method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae")
+method_color_palette = c("#c1121f", "#d3b300", "#165451", "#f09232", "#4c2623", "#0082c0", "#1d1815", "#68a756", "#ded6c1", "#fb6107", "#ccd5ae", "#ABDDDE")
 customized_method_colors = method_color_palette[1:length(unique(domain_metrics_df$method))]
 names(customized_method_colors) = unique(domain_metrics_df$method)
 
@@ -435,7 +442,7 @@ for (tp in timepoints) {
         }
     }
 }
-domain_metrics_df$method = factor(domain_metrics_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST'))
+domain_metrics_df$method = factor(domain_metrics_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST', 'STAMP'))
 metric_df = domain_metrics_df[domain_metrics_df$index == 'median-LISI', ]
 metric_df$value = as.numeric(metric_df$value)
 # compute average
@@ -459,7 +466,7 @@ for (metric in unique(domain_metrics_df$index)) {
         theme_pubr() +
         theme(axis.text.x = element_blank()) + xlab(NULL) + ylab(metric)
     p = p + guides(color = guide_legend(nrow = 3, title=NULL), shape=guide_legend(nrow=3, title=NULL))
-    legend = get_plot_component(p, "guide-box", return_all=TRUE)[[4]]
+    legend = get_legend(p)
     ggsave(file.path(dirname(spatial_layour_dir), 'legend.pdf'), plot=legend, width=6, height=2)
     p = p + theme(legend.position="none")
     ggsave(file.path(dirname(spatial_layour_dir), paste0(metric, ".pdf")), plot=p, width=4, height=3.5)
