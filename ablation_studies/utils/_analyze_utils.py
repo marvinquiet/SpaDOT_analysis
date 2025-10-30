@@ -30,7 +30,7 @@ def KMeans_Clustering(adata, n_clusters):
         # perform KMeans clustering
         tp_adata = adata[adata.obs['timepoint'] == tp].copy()
         tp_kmeans = KMeans(n_clusters=n_clusters[i], 
-                           random_state=1993, 
+                           random_state=42, 
                            n_init=10).fit(tp_adata.X)
         tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
         tp_adata_list.append(tp_adata)

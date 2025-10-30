@@ -59,9 +59,11 @@ def prepare_dataloader(adata, model_config):
         tp_dataset = MyDataset(tp_loc, tp_adata.X, tp_ix)
         dataset_dict[tp] = tp_dataset
         # --- Neighborloader for graph data
+        k_cutoff_factor =  min(model_config['max_neighbors'], model_config['knn_cutoff'] * (1 if tp_adata.n_obs < 3000 else 1 + round((tp_adata.n_obs - 3000) / 1000)))
+        # k_cutoff_factor = min(model_config['max_neighbors'], model_config['knn_cutoff']*round(1/1000*tp_adata.n_obs))
         _utils._Cal_Spatial_Net(tp_adata, 
                             #    k_cutoff=min(model_config['max_neighbors'], model_config['knn_cutoff']*round(1/1000*tp_adata.n_obs)),
-                               k_cutoff=min(model_config['max_neighbors'], model_config['knn_cutoff']*math.ceil(1/5000*tp_adata.n_obs)),
+                               k_cutoff=k_cutoff_factor,
                                max_neigh=model_config['max_neighbors'])
         tp_adj = torch.tensor(tp_adata.uns['adj'], dtype=model_config['dtype'])
         tp_edge_index, _ = dense_to_sparse(tp_adj)
@@ -130,11 +132,11 @@ def _beta_cycle_linear(n_iter, start=0.0, stop=1, n_cycle=10, ratio=1):
     return L 
 
 # K-Means related
-def _compute_kmeans_loss(model, model_config, tp, tp_ix, latent):
+def _compute_kmeans_loss(model, model_config, tp, tp_ix, tp_p_m):
     '''Compute KMeans loss between assignment and centroids
     :param tp: time point
     :param tp_ix: time point specific index
-    :param latent: GP posterior latent space
+    :param tp_p_m: posterior mean
 
     :return: K-Means loss
     '''
@@ -142,7 +144,7 @@ def _compute_kmeans_loss(model, model_config, tp, tp_ix, latent):
     cluster_assignments = [cluster_index_dict[tp][_.item()] for _ in tp_ix]
     cluster_centers = torch.tensor(model.kmeans_center_dict[tp], dtype=model_config['dtype'], device=model_config['device'])
     # Compute K-means loss (mean of squared distances)
-    kmeans_loss = torch.sum(torch.norm(latent - cluster_centers[cluster_assignments]) ** 2 / latent.shape[1] / len(set(cluster_assignments)) )
+    kmeans_loss = torch.sum(torch.norm(tp_p_m - cluster_centers[cluster_assignments]) ** 2 / tp_p_m.shape[1] / len(set(cluster_assignments)) )
     return kmeans_loss
 
 def _update_Kmeans(model, model_config, dataloader_dict):

@@ -91,7 +91,12 @@ class SpaDOT_SVGPGATVAE_alignment(nn.Module):
         alignment_loss = F.mse_loss(SVGP_latent_sample.norm(dim=1) / self.SVGP_z_dim, 
                                     GAT_latent_sample.norm(dim=1) / self.GAT_z_dim, 
                                     reduction='sum')
-        return recon_loss, SVGP_KL, GAT_KL, alignment_loss, final_latent
+        # orthogo
+        # SVGP_latent_sample_centered = SVGP_latent_sample - SVGP_latent_sample.mean(0)
+        # GAT_latent_sample_centered = GAT_latent_sample - GAT_latent_sample.mean(0)
+        # ortho_loss = torch.norm((SVGP_latent_sample_centered.T @ GAT_latent_sample_centered) / self.SVGP_z_dim / self.GAT_z_dim, p='fro')
+        p_m = torch.cat([SVGP_p_m, GAT_m], dim=1)
+        return recon_loss, SVGP_KL, GAT_KL, alignment_loss, p_m
     
     def all_latent_samples(self, X, Y, edge_index, tp):
         """
@@ -109,16 +114,17 @@ class SpaDOT_SVGPGATVAE_alignment(nn.Module):
         Y = torch.tensor(Y, dtype=self.dtype, device=self.device)
         edge_index = torch.tensor(edge_index, dtype=torch.long, device=self.device)
         SVGP_qnet_mu, SVGP_qnet_var = self.SVGPEncoder(Y)
-        SVGP_p_m, SVGP_p_v = [], []
+        # SVGP_p_m, SVGP_p_v = [], []
+        SVGP_p_m = []
         for l in range(self.SVGP_z_dim):
             p_m_l, p_v_l, _, _ = self.svgp_dict[str(tp)].approximate_posterior_params(X, X, SVGP_qnet_mu[:, l], SVGP_qnet_var[:, l])
             SVGP_p_m.append(p_m_l)
-            SVGP_p_v.append(p_v_l)
+            # SVGP_p_v.append(p_v_l)
         SVGP_p_m = torch.stack(SVGP_p_m, dim=1)
-        SVGP_p_v = torch.stack(SVGP_p_v, dim=1)
+        # SVGP_p_v = torch.stack(SVGP_p_v, dim=1)
 
         GAT_m, _ = self.GATEncoder(Y, edge_index)
-        p_m = torch.cat((SVGP_p_m, GAT_m), dim=1)
+        p_m = torch.cat([SVGP_p_m, GAT_m], dim=1)
         latent_samples = p_m.data.cpu().detach().numpy()
         return latent_samples
     

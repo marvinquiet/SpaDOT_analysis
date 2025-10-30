@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch_geometric.nn import TransformerConv
+from torch_geometric.nn import TransformerConv, GATConv
 from torch_geometric.nn import SAGEConv
 
 
@@ -39,9 +39,24 @@ class GATEncoder(nn.Module):
     def __init__(self, input_dim, GAT_z_dim, hidden_dim=512, num_heads=4):
         super(GATEncoder, self).__init__()
         # Define multiple GAT layers with specified dimensions and heads
-        self.gat1 = TransformerConv(input_dim, hidden_dim, heads=num_heads, concat=True)
-        self.gat2 = TransformerConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, concat=True)
-        self.gat3 = TransformerConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, concat=False)
+        self.gat1 = GATConv(input_dim, hidden_dim, heads=num_heads, concat=True)
+        torch.nn.init.xavier_uniform(self.gat1.lin.weight)
+        self.gat2 = GATConv(hidden_dim*num_heads, hidden_dim, heads=num_heads, concat=True)
+        torch.nn.init.xavier_uniform(self.gat2.lin.weight)
+        self.gat3 = GATConv(hidden_dim*num_heads, hidden_dim, heads=num_heads, concat=False)
+        torch.nn.init.xavier_uniform(self.gat3.lin.weight)
+        # self.norm = nn.LayerNorm(hidden_dim)
+        # self.gat1 = TransformerConv(input_dim, hidden_dim, heads=num_heads, concat=False, dropout=0.2)
+        # self.gat2 = TransformerConv(hidden_dim, hidden_dim, heads=num_heads, concat=False, dropout=0.2)
+        # self.gat3 = TransformerConv(hidden_dim, hidden_dim, heads=num_heads, concat=False, dropout=0.2)
+        # self.norm = nn.LayerNorm(hidden_dim)
+
+        # self.gat1 = GATConv(input_dim, hidden_dim, heads=num_heads, concat=True)
+        # torch.nn.init.xavier_uniform(self.gat1.lin.weight)
+        # self.gat2 = GATConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, concat=True)
+        # torch.nn.init.xavier_uniform(self.gat2.lin.weight)
+        # self.gat3 = GATConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, concat=False)
+        # torch.nn.init.xavier_uniform(self.gat3.lin.weight)
         self.GAT_fc = nn.Linear(hidden_dim, GAT_z_dim*2)
         nn.init.xavier_uniform_(self.GAT_fc.weight)
 
@@ -50,12 +65,41 @@ class GATEncoder(nn.Module):
         x: gene expression
         edge_index: graph structure
         '''
+        # h = F.leaky_relu(self.norm(self.gat1(x, edge_index)))
+        # h = F.leaky_relu(self.norm(self.gat2(h, edge_index)))
+        # h = self.norm(self.gat3(h, edge_index))
         h = F.leaky_relu(self.gat1(x, edge_index))
         h = F.leaky_relu(self.gat2(h, edge_index))
         h = self.gat3(h, edge_index)
         GAT_z = self.GAT_fc(h)
         GAT_enc_mu, GAT_enc_logvar = torch.chunk(GAT_z, 2, dim=1)
         return GAT_enc_mu, torch.exp(GAT_enc_logvar)
+
+
+# class GATEncoder_norm(nn.Module):
+#     def __init__(self, input_dim, GAT_z_dim, hidden_dim=512, num_heads=4):
+#         super(GATEncoder_norm, self).__init__()
+#         # Define multiple GAT layers with specified dimensions and heads
+#         self.gat1 = TransformerConv(input_dim, hidden_dim, heads=num_heads, concat=True)
+#         self.norm1 = nn.LayerNorm(hidden_dim * num_heads)
+#         self.gat2 = TransformerConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, concat=True)
+#         self.norm2 = nn.LayerNorm(hidden_dim * num_heads)
+#         self.gat3 = TransformerConv(hidden_dim * num_heads, hidden_dim, heads=num_heads, concat=False)
+#         self.norm3 = nn.LayerNorm(hidden_dim)
+#         self.GAT_fc = nn.Linear(hidden_dim, GAT_z_dim*2)
+#         nn.init.xavier_uniform_(self.GAT_fc.weight)
+
+#     def forward(self, x, edge_index):
+#         '''
+#         x: gene expression
+#         edge_index: graph structure
+#         '''
+#         h = F.leaky_relu(self.norm1(self.gat1(x, edge_index)))
+#         h = F.leaky_relu(self.norm2(self.gat2(h, edge_index)))
+#         h = self.norm3(self.gat3(h, edge_index))
+#         GAT_z = self.GAT_fc(h)
+#         GAT_enc_mu, GAT_enc_logvar = torch.chunk(GAT_z, 2, dim=1)
+#         return GAT_enc_mu, torch.exp(GAT_enc_logvar)
 
 
 class GCNEncoder(nn.Module):

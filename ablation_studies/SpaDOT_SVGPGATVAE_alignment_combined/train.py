@@ -56,7 +56,7 @@ def train_SpaDOT(dataloader_dict, model_config):
                 y_batch, x_batch, tp_ix, edge_index_batch = batch.x, batch.loc, batch.data_index, batch.edge_index
                 x_batch, y_batch, edge_index_batch = x_batch.to(model_config['device']), y_batch.to(model_config['device']), edge_index_batch.to(model_config['device'])
                 tp_ix, adj_idx  = tp_ix[:batch.batch_size], batch.n_id[:batch.batch_size] # subset to seed nodes only
-                tp_Recon_val, tp_SVGP_KL_val, tp_GAT_KL_val, tp_alignment_val, tp_tp_p_m = \
+                tp_Recon_val, tp_SVGP_KL_val, tp_GAT_KL_val, tp_alignment_val, tp_p_m = \
                 SpaDOT_model.forward(x=x_batch, y=y_batch, edge_index=edge_index_batch, 
                                      tp=tp, batch_size=batch.batch_size)
                 tp_elbo_val = model_config['lambda1'] * tp_Recon_val - \

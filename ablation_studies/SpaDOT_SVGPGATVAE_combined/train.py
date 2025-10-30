@@ -149,7 +149,7 @@ if __name__ == "__main__":
     parser.add_argument('--prefix', dest='prefix', type=str)
     args = parser.parse_args()
     args.config = '/net/mulan/home/wenjinma/projects/SpaDOT_analysis/ablation_studies/config.yaml'
-    args.device = 'cuda:3'
+    args.device = 'cuda:2'
     args.save_model = True
     print(args)
     # create output directory if not exists

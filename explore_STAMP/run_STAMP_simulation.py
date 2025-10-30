@@ -11,15 +11,20 @@ import anndata
 
 # the location of R (used for the mclust clustering)
 import os
+import random
+import argparse
+import torch
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
+import time
 
 
-base_dir = "/net/mulan/home/wenjinma"
+device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
+base_dir = "/media/sda/wenjinma"
 data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain"
-result_dir = base_dir+os.sep+"projects/spatialATAC-explore/explore_STAMP/simulation_results"
+result_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_STAMP/simulation_results"
 os.makedirs(result_dir, exist_ok=True)
 
 def parse_args():
@@ -42,52 +47,55 @@ if __name__ == '__main__':
     adata.obs.rename(columns={'x_coor': 'pixel_x', 'y_coor': 'pixel_y', 'label': 'annotation'}, inplace=True)
     loc = np.array(adata.obs[['pixel_x', 'pixel_y']]).astype('float64')
     adata.obs['timepoint_numeric'] = adata.obs['timepoint'].astype('category').cat.codes
+    adata.obs['timepoint_numeric'] = adata.obs['timepoint_numeric'].astype('float32')
     adata.obsm['spatial'] = loc
     adata.obs['data'] = adata.obs['timepoint']
+    adata.layers['count'] = adata.X.astype('float32')
+    
     timepoints = list(set(adata.obs['timepoint']))
     timepoints.sort()
-    # split adata into batches
-    adata_list, l_list, adj_list = [], [], []
+
+    # --- run STAMP
+    start_time = time.time()
+    sq.gr.spatial_neighbors(adata, n_neighs=round(1 / 1000 * adata.n_obs))
+    sctm.seed.seed_everything(0)
+    print(adata)
+    sctm.pp.filter_genes(adata, 0.05)
+    print(adata)
+
+    model = sctm.stamp.STAMP(
+        adata,
+        n_topics=20,
+        layer="count",
+        time_covariate_keys="timepoint_numeric",
+        # gene_likelihood="poisson",
+    )
+    # We used a weighted sampler here as that the first timepoint is extremly small compared to the last timepoint.
+    model.train(device=device)
+    # end timer
+    end_time = time.time()
+    with open(simulation_result_dir+os.sep+'STAMP_running_time.txt', 'w') as f:
+        f.write(str(end_time-start_time))
+        f.write('\n')
+
+    topic_prop = model.get_cell_by_topic()
+    adata.obsm['X_stamp'] = topic_prop.values
+    for i in topic_prop.columns:
+        adata.obs[i] = topic_prop[i]
+    adata.obs.to_csv(simulation_result_dir+os.sep+'STAMP_topic_proportions.csv')
+
     for tp in timepoints:
-        adata_tp = adata[adata.obs['timepoint']==tp].copy()
-        pixel_x = adata_tp.obs['pixel_x'].tolist()
-        pixel_y = adata_tp.obs['pixel_y'].tolist()
-        s=1
-        b=49
-        adj_tp=spg.calculate_adj_matrix(x=pixel_x,y=pixel_y, beta=b, alpha=s, histology=False)
-        # np.savetxt(simulation_result_dir+os.sep+str(tp)+'_adj.csv', adj_tp, delimiter=',')
-        adata_tp.raw = adata_tp
-        sc.pp.normalize_total(adata_tp)
-        sc.pp.log1p(adata_tp)
-        p = 0.5
-        l_tp = spg.search_l(p, adj_tp, start=0.01, end=1000, tol=0.01, max_run=100)
-        adj_list.append(adj_tp)
-        adata_list.append(adata_tp)
-        l_list.append(l_tp)
-    # run spaGCN multi-section
-    res=0.6
-    #Set seed
-    r_seed=t_seed=n_seed=100
-    #Multi-section SpaGCN
-    clf=spg.multiSpaGCN()
-    clf.train(adata_list,adj_list,l_list,init_spa=True,init="louvain",res=res, tol=5e-3, lr=0.05, max_epochs=200)
-    # explore spaGCN embeddings
-    spaGCN_embed = clf.embed
-    merge_data = AnnData.concatenate(*adata_list)
-    merge_data.obsm['spaGCN_embed'] = spaGCN_embed
-    sc.pp.neighbors(merge_data, use_rep="spaGCN_embed", random_state=42)
-    sc.tl.umap(merge_data, random_state=42)
-    merge_data.obs['tp_annotation'] = merge_data.obs['timepoint'].astype(str) + '_' + merge_data.obs['annotation'].astype(str)
-    sc.pl.umap(merge_data, color=["batch", "celltype", "tp_annotation"])
-    plt.savefig(simulation_result_dir+os.sep+'spaGCN_UMAP.png')
-    plt.close()
-    merge_data.write_h5ad(simulation_result_dir+os.sep+'spaGCN.h5ad')
-    # --- calculate ARI per timepoint
+        tp_adata = adata[adata.obs['timepoint'] == tp]
+        for i in topic_prop.columns:
+            sctm.pl.spatial(tp_adata, color=i, size=5, vmax='p99')
+            plt.savefig(simulation_result_dir+os.sep+f'{i}_{tp}_spatial.png')
+
+    # --- use topic proportions to perform KMeans clustering
     tp_kmeans_dict = dict()
     ARI_dict = dict()
-    for tp in timepoints:
-        tp_adata = merge_data[merge_data.obs['timepoint'] == tp]
-        tp_emb = tp_adata.obsm['spaGCN_embed']
+    for tp in set(adata.obs['timepoint']):
+        tp_adata = adata[adata.obs['timepoint'] == tp]
+        tp_emb = tp_adata.obsm['X_stamp']
         tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs['annotation'])), random_state=0).fit(tp_emb)
         tp_kmeans_dict[tp] = tp_kmeans
         tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
@@ -100,4 +108,4 @@ if __name__ == '__main__':
         plt.tight_layout()
         plt.savefig(simulation_result_dir+os.sep+str(tp)+'_Kmeans_separate_clustering.png')
         plt.close()
-    pd.DataFrame(ARI_dict, index=[0]).to_csv(simulation_result_dir+os.sep+'spaGCN_ARI.csv', index=False)
+    pd.DataFrame(ARI_dict, index=[0]).to_csv(simulation_result_dir+os.sep+'STAMP_ARI.csv', index=False)

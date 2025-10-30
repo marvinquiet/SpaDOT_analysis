@@ -30,7 +30,7 @@ def train_SpaDOT(dataloader_dict, model_config):
     
     # --- initialize dictionary to store loss
     loss_dict = OrderedDict()
-    loss_names = ['elbo', 'Recon', 'SVGP_KL', 'GAT_KL']
+    loss_names = ['elbo', 'Recon', 'SVGP_KL']
     for epoch in range(model_config['maxiter']):
         loss_dict[epoch] = OrderedDict()
         for name in loss_names:
@@ -60,8 +60,7 @@ def train_SpaDOT(dataloader_dict, model_config):
                 tp_Recon_val, tp_SVGP_KL_val, tp_p_m = \
                 SpaDOT_model.forward(x=x_batch, y=y_batch, tp=tp, batch_size=batch.batch_size)
                 tp_elbo_val = model_config['lambda1'] * tp_Recon_val - \
-                    beta1 * tp_SVGP_KL_val + \
-                    model_config['beta2'] * tp_GAT_KL_val
+                    beta1 * tp_SVGP_KL_val
                 # --- backward
                 optimizer.zero_grad()
                 tp_elbo_val.backward(retain_graph=True)
@@ -75,7 +74,7 @@ def train_SpaDOT(dataloader_dict, model_config):
                 tp_loss_dict[tp][name] /= len(tp_dataloader)
                 loss_dict[epoch][f'{name}'] += tp_loss_dict[tp][name]
         if epoch % 10 == 0:
-            print(f'Epoch {epoch + 1}: Training time: {int(time()-ep_starttime)} seconds, ELBO: {loss_dict[epoch]["elbo"]:.8f}, Recon loss: {loss_dict[epoch]["Recon"]:.8f}, SVGP KL loss: {loss_dict[epoch]["SVGP_KL"]:.8f}, GAT KL loss: {loss_dict[epoch]["GAT_KL"]:.8f}')
+            print(f'Epoch {epoch + 1}: Training time: {int(time()-ep_starttime)} seconds, ELBO: {loss_dict[epoch]["elbo"]:.8f}, Recon loss: {loss_dict[epoch]["Recon"]:.8f}, SVGP KL loss: {loss_dict[epoch]["SVGP_KL"]:.8f}')
     print('Training finished...')
     print('Training time: %d seconds.' % int(time() - train_starttime))
     loss_df = pd.DataFrame.from_dict(loss_dict)
