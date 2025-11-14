@@ -17,26 +17,29 @@ sns.set_palette(cc.glasbey)
 from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 
-data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop"
-result_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spaVAE/simulation_prop_results"
-os.makedirs(result_dir, exist_ok=True)
 
 sys.path.append('/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spaVAE/spaVAE/src/spaVAE_Batch/')
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run spaVAE on simulation data")
     parser.add_argument('--seed', type=int, help='Simulation seed')
+    parser.add_argument('--prop', type=float, help='Simulated proportion of major cell type in each region')
+    parser.add_argument('--DEG', type=int, default=500, help='Number of DEGs per cell type')
+    parser.add_argument('--mixedNPCs', action='store_true', help='Whether the NPCs is a mixture')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parse_args()
-    simulation_data_dir = data_dir+os.sep+str(args.seed)
-    simulation_result_dir = result_dir+os.sep+str(args.seed)
-    # if os.path.exists(simulation_result_dir+os.sep+'spaVAE_running_time.txt'):
-    #     print('spaVAE has been run on this simulation data')
-    #     print(simulation_result_dir)
-    #     sys.exit(0)
+    if args.mixedNPCs:
+        data_dir = f"/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_mixedNPCs_DEG{args.DEG}"
+        result_dir = f"/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spaVAE/simulation_prop_results_mixedNPCs_DEG{args.DEG}"
+    else:
+        data_dir = f"/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_DEG{args.DEG}"
+        result_dir = f"/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spaVAE/simulation_prop_results_DEG{args.DEG}"
+    os.makedirs(result_dir, exist_ok=True)
+    simulation_data_dir = data_dir+os.sep+str(args.seed)+os.sep+'prop_'+str(args.prop)
+    simulation_result_dir = result_dir+os.sep+str(args.seed)+os.sep+'prop_'+str(args.prop)
 
     # run spaVAE Batch version
     start_time = time.time()

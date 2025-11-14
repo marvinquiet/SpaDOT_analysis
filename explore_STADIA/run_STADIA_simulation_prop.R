@@ -10,26 +10,30 @@ library(optparse)
 library(Matrix)
 
 ## on Mulan
-base_dir = '/net/mulan/home/wenjinma'
-project_dir = file.path(base_dir, "projects/spatialATAC-explore")
-work_dir = file.path(project_dir, 'explore_STADIA')
+work_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_STADIA"
 setwd(work_dir)
-set.seed(2024)
 
 # set optparse
 option_list = list(
-    make_option(c("-x", "--x_DEG"), type="integer", default=20, help="x% DEGs when having domain split"),
-    make_option(c("-y", "--y_DEG"), type="integer", default=50, help="x% DEGs among domains"),
-    make_option(c("-s", "--seed"), type="integer", default=2024, help="random seed")
+    make_option(c("-s", "--seed"), type="integer", default=2024, help="random seed"),
+    make_option(c("--prop"), type="double", default=0.8, help="Major cell type proportion"),
+    make_option(c("--DEG"), type="integer", default=500, help="Number of DEGs per cell type"),
+    make_option(c("--mixedNPCs"), action="store_true", default=FALSE, help="Whether the NPCs is a mixture")
 )
 parser = OptionParser(option_list=option_list)
 opt = parse_args(parser)
 
 seed = opt$seed
-x_DEG = opt$x_DEG
-y_DEG = opt$y_DEG
-scenario_dir = file.path(base_dir, 'data', 'spatial_simulation_brain', seed, paste(x_DEG, y_DEG, sep='_'))
-result_dir = file.path(work_dir, 'simulation_results', seed, paste(x_DEG, y_DEG, sep='_'))
+prop = opt$prop
+DEG = opt$DEG
+
+if (opt$mixedNPCs) {
+    scenario_dir = file.path(paste0("/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_mixedNPCs_DEG", DEG), seed, paste('prop', prop, sep='_'))
+    result_dir = file.path(work_dir, paste0('simulation_prop_results_mixedNPCs_DEG', DEG), seed, paste('prop', prop, sep='_'))
+} else {
+    scenario_dir = file.path(paste0("/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_DEG", DEG), seed, paste('prop', prop, sep='_'))
+    result_dir = file.path(work_dir, paste0('simulation_prop_results_DEG', DEG), seed, paste('prop', prop, sep='_'))
+}
 dir.create(result_dir, recursive=T)
 
 # load data

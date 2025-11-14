@@ -22,7 +22,6 @@ import time
 
 
 device = torch.device('cuda:1' if torch.cuda.is_available() else 'cpu')
-base_dir = "/media/sda/wenjinma"
 data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain"
 result_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_STAMP/simulation_results"
 os.makedirs(result_dir, exist_ok=True)

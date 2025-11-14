@@ -1,5 +1,5 @@
 # conda activate /media/sda/wenjinma/envs/STAligner_py38
-# conda activate /net/zootopia/disk1/wenjinma/envs/STAligner_py38
+# conda activate /net/zootopia/disk1/wenjinma/envs/spatialign_py38
 import warnings
 warnings.filterwarnings("ignore")
 
@@ -8,6 +8,7 @@ from spatialign import Spatialign
 # the location of R (used for the mclust clustering)
 import os, argparse
 import anndata
+import torch
 import scanpy as sc
 import pandas as pd
 import numpy as np
@@ -18,19 +19,29 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 import time
 
-data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop"
-result_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spatiAlign/simulation_prop_results"
-os.makedirs(result_dir, exist_ok=True)
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run spatiAlign on simulation data")
     parser.add_argument('--seed', type=int, help='Simulation seed')
     parser.add_argument('--prop', type=float, help='Simulated proportion of major cell type in each region')
+    parser.add_argument('--DEG', type=int, help='Number of DEGs per cell type')
+    parser.add_argument('--mixedNPCs', action='store_true', help='Whether the NPCs is a mixture')
+    parser.add_argument('--regionNPCs', action='store_true', help='Whether the NPCs is region specific')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parse_args()
+    if args.mixedNPCs:
+        data_dir = f"/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_mixedNPCs_DEG{args.DEG}"
+        result_dir = f"/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spatiAlign/simulation_prop_results_mixedNPCs_DEG{args.DEG}"
+    elif args.regionNPCs:
+        data_dir = f"/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_regionNPCs_DEG{args.DEG}"
+        result_dir = f"/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spatiAlign/simulation_prop_results_regionNPCs_DEG{args.DEG}"
+    else:
+        data_dir = f"/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_DEG{args.DEG}"
+        result_dir = f"/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spatiAlign/simulation_prop_results_DEG{args.DEG}"
+    os.makedirs(result_dir, exist_ok=True)
     simulation_data_dir = data_dir+os.sep+str(args.seed)+os.sep+'prop_'+str(args.prop)
     simulation_result_dir = result_dir+os.sep+str(args.seed)+os.sep+'prop_'+str(args.prop)
     os.makedirs(simulation_result_dir, exist_ok=True)
@@ -55,6 +66,8 @@ if __name__ == '__main__':
     start_time = time.time()
     model = Spatialign(
         *datasets,
+        min_genes=0,
+        min_cells=0,
         batch_key='batch',
         is_norm_log=True,
         is_scale=False,
@@ -62,10 +75,10 @@ if __name__ == '__main__':
         is_undirected=True,
         latent_dims=100,
         seed=42,
-        gpu=0,
+        gpu=1 if torch.cuda.is_available() else None,
         save_path=simulation_result_dir+os.sep,
-        is_verbose=True
-    ) # use default tau1, tau2 and tau3
+        is_verbose=True,
+        tau1=0.05, tau2=0.01, tau3=0.1) # use recommended tau1, tau2 and tau3
     model.train()
     model.alignment()
     end_time = time.time()

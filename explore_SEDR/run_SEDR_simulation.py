@@ -5,6 +5,7 @@ import argparse
 import torch
 import numpy as np
 import pandas as pd
+import anndata
 import scanpy as sc
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -15,10 +16,9 @@ import time
 import SEDR
 import harmonypy as hm
 
-device = torch.device('cuda')
-base_dir = "/media/sda/wenjinma"
-data_dir = base_dir+os.sep+"data/spatial_simulation_brain"
-result_dir = base_dir+os.sep+"projects/spatialATAC-explore/explore_SEDR/simulation_results"
+device = torch.device('cuda:2' if torch.cuda.is_available() else 'cpu')
+data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain"
+result_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_SEDR/simulation_results"
 os.makedirs(result_dir, exist_ok=True)
 
 def parse_args():
@@ -34,10 +34,11 @@ if __name__ == '__main__':
     simulation_data_dir = data_dir+os.sep+str(args.seed)+os.sep+str(args.DEG_x)+'_'+str(args.DEG_y)
     simulation_result_dir = result_dir+os.sep+str(args.seed)+os.sep+str(args.DEG_x)+'_'+str(args.DEG_y)
     os.makedirs(simulation_result_dir, exist_ok=True)
-    adata = sc.read_h5ad(simulation_data_dir+os.sep+'adata.h5ad')
-    random.seed(1234)
-    sampled_idx = random.sample(range(adata.shape[0]), 3000*3)
-    adata = adata[sampled_idx].copy()
+    # adata = sc.read_h5ad(simulation_data_dir+os.sep+'adata.h5ad')
+    # random.seed(1234)
+    # sampled_idx = random.sample(range(adata.shape[0]), 3000*3)
+    # adata = adata[sampled_idx].copy()
+    adata = sc.read_h5ad(simulation_data_dir+os.sep+'adata_downsampled.h5ad')
     adata.obs.rename(columns={'x_coor': 'pixel_x', 'y_coor': 'pixel_y', 'label': 'annotation'}, inplace=True)
     loc = np.array(adata.obs[['pixel_x', 'pixel_y']]).astype('float64')
     adata.obs['timepoint_numeric'] = adata.obs['timepoint'].astype('category').cat.codes
@@ -55,12 +56,14 @@ if __name__ == '__main__':
             SEDR_adata = tp_adata
             graph_dict = graph_dict_tmp
             SEDR_adata.obs['proj_name'] = tp
+            tp_adata.obs['proj_name'] = tp_adata.obs['proj_name'].astype(str)
         else:
             var_names = SEDR_adata.var_names.intersection(tp_adata.var_names)
             SEDR_adata = SEDR_adata[:, var_names]
             tp_adata = tp_adata[:, var_names]
             tp_adata.obs['proj_name'] = tp
-            SEDR_adata = SEDR_adata.concatenate(tp_adata)
+            tp_adata.obs['proj_name'] = tp_adata.obs['proj_name'].astype(str)
+            SEDR_adata = anndata.concat((SEDR_adata, tp_adata))
             graph_dict = SEDR.combine_graph_dict(graph_dict, graph_dict_tmp)
     SEDR_adata.layers['count'] = SEDR_adata.X
     sc.pp.normalize_total(SEDR_adata, target_sum=1e6)
@@ -80,9 +83,9 @@ if __name__ == '__main__':
     sedr_feat, _, _, _ = sedr_net.process()
     SEDR_adata.obsm['SEDR'] = sedr_feat
     # Use harmony to integrate embeddings from different batches and calculate revised embeddings
-    meta_data = SEDR_adata.obs[['batch']]
+    meta_data = SEDR_adata.obs[['batch_name']]
     data_mat = SEDR_adata.obsm['SEDR']
-    vars_use = ['batch']
+    vars_use = ['batch_name']
     ho = hm.run_harmony(data_mat, meta_data, vars_use)
     res = pd.DataFrame(ho.Z_corr).T
     res_df = pd.DataFrame(data=res.values, columns=['X{}'.format(i+1) for i in range(res.shape[1])], index=SEDR_adata.obs.index)
@@ -94,26 +97,31 @@ if __name__ == '__main__':
         f.write('\n')
 
     # # plot embeddings from SEDR
-    # sc.pp.neighbors(SEDR_adata, use_rep='SEDR.Harmony', metric='cosine') # In the tutorial, cosine is used
-    # sc.tl.umap(SEDR_adata)
-    # SEDR_adata.obs['tp_annotation'] = SEDR_adata.obs['timepoint'].astype(str) + '_' + SEDR_adata.obs['annotation'].astype(str)
-    # sc.pl.umap(SEDR_adata, color=['tp_annotation', 'celltype', 'batch_name'], show=False)
-    # plt.savefig(simulation_result_dir+os.sep+'SEDR_umap.png')
-    # plt.close()
-    # SEDR_adata.write(simulation_result_dir+os.sep+'SEDR_adata.h5ad')
-    # # explore clustering results revised embeddings
-    # tp_kmeans_dict = dict()
-    # for tp in set(SEDR_adata.obs['timepoint']):
-    #     tp_adata = SEDR_adata[SEDR_adata.obs['timepoint'] == tp]
-    #     tp_emb = tp_adata.obsm['SEDR.Harmony']
-    #     tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs['annotation'])), random_state=0).fit(tp_emb)
-    #     tp_kmeans_dict[tp] = tp_kmeans
-    #     tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
-    #     print('%s Kmeans ARI: %.3f' % (tp, adjusted_rand_score(tp_adata.obs['annotation'], tp_adata.obs['kmeans'])))
-    #     plt.figure(figsize=(5,5))
-    #     ax = sns.scatterplot(data=tp_adata.obs, x='pixel_x', y='pixel_y', hue='kmeans', s=10)
-    #     plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
-    #     plt.tight_layout()
-    #     plt.savefig(simulation_result_dir+os.sep+str(tp)+'_Kmeans_separate_clustering.png')
-    #     plt.close()
+    sc.pp.neighbors(SEDR_adata, use_rep='SEDR.Harmony', metric='cosine') # In the tutorial, cosine is used
+    sc.tl.umap(SEDR_adata)
+    SEDR_adata.obs['tp_annotation'] = SEDR_adata.obs['timepoint'].astype(str) + '_' + SEDR_adata.obs['annotation'].astype(str)
+    sc.pl.umap(SEDR_adata, color=['tp_annotation', 'celltype', 'batch_name'], show=False)
+    plt.savefig(simulation_result_dir+os.sep+'SEDR_umap.png')
+    plt.close()
+    SEDR_adata.write(simulation_result_dir+os.sep+'SEDR_adata.h5ad')
+    # explore clustering results revised embeddings
+    tp_kmeans_dict = dict()
+    ARI_dict = dict()
+    for tp in set(SEDR_adata.obs['timepoint']):
+        tp_adata = SEDR_adata[SEDR_adata.obs['timepoint'] == tp]
+        tp_emb = tp_adata.obsm['SEDR.Harmony']
+        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs['annotation'])), random_state=0).fit(tp_emb)
+        tp_kmeans_dict[tp] = tp_kmeans
+        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_ARI = adjusted_rand_score(tp_adata.obs['annotation'], tp_adata.obs['kmeans'])
+        ARI_dict[tp] = tp_ARI
+        print('%s Kmeans ARI: %.3f' % (tp, tp_ARI))
+        plt.figure(figsize=(5,5))
+        ax = sns.scatterplot(data=tp_adata.obs, x='pixel_x', y='pixel_y', hue='kmeans', s=10)
+        plt.legend(bbox_to_anchor=(1.05, 1), loc=2, borderaxespad=0.)
+        plt.tight_layout()
+        plt.savefig(simulation_result_dir+os.sep+str(tp)+'_Kmeans_separate_clustering.png')
+        plt.close()
+    pd.DataFrame(ARI_dict, index=[0]).to_csv(simulation_result_dir+os.sep+'ARI.csv', index=False)
+
 

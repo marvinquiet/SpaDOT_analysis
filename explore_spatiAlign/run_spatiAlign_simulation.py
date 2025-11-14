@@ -17,9 +17,9 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import adjusted_rand_score
 import time
 
-base_dir = "/media/sda/wenjinma"
-data_dir = base_dir+os.sep+"data/spatial_simulation_brain"
-result_dir = base_dir+os.sep+"projects/spatialATAC-explore/explore_spatiAlign/simulation_results"
+
+data_dir = "/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain"
+result_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_spatiAlign/simulation_results"
 os.makedirs(result_dir, exist_ok=True)
 
 def parse_args():
@@ -35,10 +35,11 @@ if __name__ == '__main__':
     simulation_data_dir = data_dir+os.sep+str(args.seed)+os.sep+str(args.DEG_x)+'_'+str(args.DEG_y)
     simulation_result_dir = result_dir+os.sep+str(args.seed)+os.sep+str(args.DEG_x)+'_'+str(args.DEG_y)
     os.makedirs(simulation_result_dir, exist_ok=True)
-    adata = sc.read_h5ad(simulation_data_dir+os.sep+'adata.h5ad')
-    random.seed(1234)
-    sampled_idx = random.sample(range(adata.shape[0]), 3000*3)
-    adata = adata[sampled_idx].copy()
+    adata = sc.read_h5ad(simulation_data_dir+os.sep+'adata_downsampled.h5ad')
+    # adata = sc.read_h5ad(simulation_data_dir+os.sep+'adata.h5ad')
+    # random.seed(1234)
+    # sampled_idx = random.sample(range(adata.shape[0]), 3000*3)
+    # adata = adata[sampled_idx].copy()
     adata.obs.rename(columns={'x_coor': 'pixel_x', 'y_coor': 'pixel_y', 'label': 'annotation'}, inplace=True)
     loc = np.array(adata.obs[['pixel_x', 'pixel_y']]).astype('float64')
     adata.obs['timepoint_numeric'] = adata.obs['timepoint'].astype('category').cat.codes

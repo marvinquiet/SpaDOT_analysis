@@ -15,20 +15,26 @@ conda activate ~/envs/spatialATAC
 # cd /net/mulan/home/wenjinma/projects/spatialATAC-explore/explore_STADIA
 cd /net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_STADIA
 
-declare -a arr=(1993 2024 1105 327 113 905 789 1314 888 666)
-for seed in "${arr[@]}"
-do
-    echo "=== Run STARIA on simulation data for $seed ==="
-    # Rscript run_STADIA_simulation.R -x 20 -y 50 -s $seed
-    # #Rscript run_STADIA_simulation.R -x 10 -y 50 -s $seed
-    # Rscript run_STADIA_simulation.R -x 20 -y 30 -s $seed
-    # #Rscript run_STADIA_simulation.R -x 10 -y 30 -s $seed
-    # Rscript run_STADIA_simulation.R -x 30 -y 50 -s $seed
-    # Rscript run_STADIA_simulation.R -x 30 -y 30 -s $seed
+# declare -a arr=(1993 2024 1105 327 113 905 789 1314 888 666)
+# for seed in "${arr[@]}"
+# do
+#     echo "=== Run STARIA on simulation data for $seed ==="
+#     # Rscript run_STADIA_simulation.R -x 20 -y 50 -s $seed
+#     # #Rscript run_STADIA_simulation.R -x 10 -y 50 -s $seed
+#     # Rscript run_STADIA_simulation.R -x 20 -y 30 -s $seed
+#     # #Rscript run_STADIA_simulation.R -x 10 -y 30 -s $seed
+#     # Rscript run_STADIA_simulation.R -x 30 -y 50 -s $seed
+#     # Rscript run_STADIA_simulation.R -x 30 -y 30 -s $seed
+# done
 
-    Rscript run_STADIA_simulation_prop.R -s $seed --prop 0.9
-    Rscript run_STADIA_simulation_prop.R -s $seed --prop 0.8
-    Rscript run_STADIA_simulation_prop.R -s $seed --prop 0.7
-    Rscript run_STADIA_simulation_prop.R -s $seed --prop 0.6
-    Rscript run_STADIA_simulation_prop.R -s $seed --prop 0.5
+declare -a arr=(1993 2024 1105)
+declare -a prop_list=(0.9 0.8 0.7 0.6 0.5)
+declare -a DEG_list=(100 200 500)
+for seed in "${arr[@]}"; do
+    for prop in "${prop_list[@]}"; do
+        for DEG in "${DEG_list[@]}"; do
+            # Rscript run_STADIA_simulation_prop.R --seed $seed --prop $prop --DEG $DEG
+            Rscript run_STADIA_simulation_prop.R --seed $seed --prop $prop --DEG $DEG --mixedNPCs
+        done
+    done
 done
