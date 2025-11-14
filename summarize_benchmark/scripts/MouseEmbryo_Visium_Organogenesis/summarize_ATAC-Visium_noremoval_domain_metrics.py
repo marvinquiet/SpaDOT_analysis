@@ -2,6 +2,9 @@
 import os
 import pandas as pd
 
+import sys
+sys.path.append('/net/mulan/home/wenjinma/projects/SpaDOT_analysis/summarize_benchmark/scripts')
+
 from method_utils import *
 import utils
 

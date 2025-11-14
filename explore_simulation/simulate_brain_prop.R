@@ -18,14 +18,16 @@ source('utils.R')
 # set optparse
 option_list = list(
     make_option(c("-s", "--seed"), type="integer", default=2024, help="random seed"),
-    make_option(c("-p", "--prop"), type="double", default=0.5, help="proportion of major cell type in each region")
+    make_option(c("-p", "--prop"), type="double", default=0.5, help="proportion of major cell type in each region"),
+    make_option(c("--DEG"), type="integer", default=500, help="number of DE genes for each cell type")
 )
 parser = OptionParser(option_list=option_list)
 opt = parse_args(parser)
 
 
 data_dir = '/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain'
-result_dir = '/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop'
+param_dir = '/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop'
+result_dir = paste0('/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_DEG', opt$DEG)
 dir.create(result_dir, showWarnings = FALSE)
 
 seed = opt$seed
@@ -35,23 +37,23 @@ dir.create(seed_dir, showWarnings=F, recursive = TRUE)
 
 #' estimate for once and use it later to do simulation
 # NPCs_init_params = splatter_estimate_params('/net/zootopia/disk1/wenjinma/data/spatial_simulation', cell_type='Stem cells')
-# saveRDS(NPCs_init_params, file=file.path(result_dir, "NPCs_init_params_pFC_for_LIBD.RDS"))
-NPCs_init_params = readRDS(file.path(result_dir, "NPCs_init_params_pFC_for_LIBD.RDS"))
+# saveRDS(NPCs_init_params, file=file.path(param_dir, "NPCs_init_params_pFC_for_LIBD.RDS"))
+NPCs_init_params = readRDS(file.path(param_dir, "NPCs_init_params_pFC_for_LIBD.RDS"))
 #Neurons_init_params = splatter_estimate_params(file.path(base_dir, "data/spatial_simulation"), cell_type='Neurons')
-#saveRDS(Neurons_init_params, file = file.path(result_dir, "Neurons_init_params_pFC_for_LIBD.RDS"))
-Neurons_init_params = readRDS(file.path(result_dir, "Neurons_init_params_pFC_for_LIBD.RDS"))
+#saveRDS(Neurons_init_params, file = file.path(param_dir, "Neurons_init_params_pFC_for_LIBD.RDS"))
+Neurons_init_params = readRDS(file.path(param_dir, "Neurons_init_params_pFC_for_LIBD.RDS"))
 #GABANeurons_init_params = splatter_estimate_params(file.path(base_dir, "data/spatial_simulation"), cell_type='GABAergic neurons')
-#saveRDS(GABANeurons_init_params, file = file.path(result_dir, "GABA_init_params_pFC_for_LIBD.RDS"))
-GABANeurons_init_params = readRDS(file.path(result_dir, "GABA_init_params_pFC_for_LIBD.RDS"))
+#saveRDS(GABANeurons_init_params, file = file.path(param_dir, "GABA_init_params_pFC_for_LIBD.RDS"))
+GABANeurons_init_params = readRDS(file.path(param_dir, "GABA_init_params_pFC_for_LIBD.RDS"))
 #Astrocytes_init_params = splatter_estimate_params(file.path(base_dir, "data/spatial_simulation"), cell_type='Astrocytes')
-#saveRDS(Astrocytes_init_params, file = file.path(result_dir, "Astrocytes_init_params_pFC_for_LIBD.RDS"))
-Astrocytes_init_params = readRDS(file.path(result_dir, "Astrocytes_init_params_pFC_for_LIBD.RDS"))
+#saveRDS(Astrocytes_init_params, file = file.path(param_dir, "Astrocytes_init_params_pFC_for_LIBD.RDS"))
+Astrocytes_init_params = readRDS(file.path(param_dir, "Astrocytes_init_params_pFC_for_LIBD.RDS"))
 #OPC_init_params = splatter_estimate_params(file.path(base_dir, "data/spatial_simulation"), cell_type='OPC')
-#saveRDS(OPC_init_params, file = file.path(result_dir, "OPC_init_params_pFC_for_LIBD.RDS"))
-OPC_init_params = readRDS(file.path(result_dir, "OPC_init_params_pFC_for_LIBD.RDS"))
+#saveRDS(OPC_init_params, file = file.path(param_dir, "OPC_init_params_pFC_for_LIBD.RDS"))
+OPC_init_params = readRDS(file.path(param_dir, "OPC_init_params_pFC_for_LIBD.RDS"))
 # Micro_init_params = splatter_estimate_params('/net/zootopia/disk1/wenjinma/data/spatial_simulation', cell_type='Microglia')
-# saveRDS(Micro_init_params, file=file.path(result_dir, "Micro_init_params_pFC_for_LIBD.RDS"))
-Micro_init_params = readRDS(file.path(result_dir, "Micro_init_params_pFC_for_LIBD.RDS"))
+# saveRDS(Micro_init_params, file=file.path(param_dir, "Micro_init_params_pFC_for_LIBD.RDS"))
+Micro_init_params = readRDS(file.path(param_dir, "Micro_init_params_pFC_for_LIBD.RDS"))
 
 #' generate locations for image t0, t1, t2 
 tp_clusters = c(3, 4, 5)
@@ -69,10 +71,10 @@ for (timepoint in names(tp_clusters)) {
     ### test subsampled results
     #ggscatter(subsample, x='x_coor', y='y_coor', color='label', size=1)
     #subsample$label = as.factor(subsample$label)
-    #ggsave(file.path(result_dir, paste0(timepoint, '_simulated_image.png')))
+    #ggsave(file.path(param_dir, paste0(timepoint, '_simulated_image.png')))
     # save results to list
-    #saveRDS(res, file.path(result_dir, paste0(timepoint, '_simulated_image_data.RDS')))
-    res = readRDS(file.path(result_dir, paste0(timepoint, '_simulated_image_data.RDS')))
+    #saveRDS(res, file.path(param_dir, paste0(timepoint, '_simulated_image_data.RDS')))
+    res = readRDS(file.path(param_dir, paste0(timepoint, '_simulated_image_data.RDS')))
     location_res[[timepoint]] = res
 }
 ### find cluster correspondence among timepoints -> manually TODO: how to make it automatically corresponded?
@@ -94,18 +96,18 @@ for (timepoint in names(tp_clusters)) {
 #}
 
 ## generate simulated data for t0 with one cell type - stem cells in each brain region
-simulated_NPCs = splatter_simu_brain(NPCs_init_params, nCells=20000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
-colData(simulated_NPCs)$cell_type = 'NPC'
-simulated_OPCs = splatter_simu_brain(OPC_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
-colData(simulated_OPCs)$cell_type = 'OPC'
-simulated_Astrocytes = splatter_simu_brain(Astrocytes_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
-colData(simulated_Astrocytes)$cell_type = 'Astrocytes'
-simulated_neurons = splatter_simu_brain(Neurons_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
-colData(simulated_neurons)$cell_type = 'Neurons'
-simulated_GABA = splatter_simu_brain(GABANeurons_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
-colData(simulated_GABA)$cell_type = 'GABA'
-simualted_Micro = splatter_simu_brain(Micro_init_params, nCells=15000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
-colData(simualted_Micro)$cell_type = 'Microglia'
+# simulated_NPCs = splatter_simu_brain(NPCs_init_params, nCells=20000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+# colData(simulated_NPCs)$cell_type = 'NPC'
+# simulated_OPCs = splatter_simu_brain(OPC_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+# colData(simulated_OPCs)$cell_type = 'OPC'
+# simulated_Astrocytes = splatter_simu_brain(Astrocytes_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+# colData(simulated_Astrocytes)$cell_type = 'Astrocytes'
+# simulated_neurons = splatter_simu_brain(Neurons_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+# colData(simulated_neurons)$cell_type = 'Neurons'
+# simulated_GABA = splatter_simu_brain(GABANeurons_init_params, nCells=5000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+# colData(simulated_GABA)$cell_type = 'GABA'
+# simualted_Micro = splatter_simu_brain(Micro_init_params, nCells=15000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+# colData(simualted_Micro)$cell_type = 'Microglia'
 
 #simulated_neurons = logNormCounts(simulated_neurons)
 #simulated_neurons = runUMAP(simulated_neurons)
@@ -122,20 +124,58 @@ colData(simualted_Micro)$cell_type = 'Microglia'
 #simulated_OPC = logNormCounts(simulated_OPC)
 #simulated_OPC = runUMAP(simulated_OPC)
 
-rowData(simulated_NPCs) = rowData(simulated_NPCs)[, 'Gene', drop=F]
-colnames(simulated_NPCs) = paste0(colnames(simulated_NPCs), '_', colData(simulated_NPCs)$cell_type)
-rowData(simulated_neurons) = rowData(simulated_neurons)[, 'Gene', drop=F]
-colnames(simulated_neurons) = paste0(colnames(simulated_neurons), '_', colData(simulated_neurons)$cell_type)
-rowData(simulated_GABA) = rowData(simulated_GABA)[, 'Gene', drop=F]
-colnames(simulated_GABA) = paste0(colnames(simulated_GABA), '_', colData(simulated_GABA)$cell_type)
-rowData(simulated_Astrocytes) = rowData(simulated_Astrocytes)[, 'Gene', drop=F]
-colnames(simulated_Astrocytes) = paste0(colnames(simulated_Astrocytes), '_', colData(simulated_Astrocytes)$cell_type)
-rowData(simulated_OPCs) = rowData(simulated_OPCs)[, 'Gene', drop=F]
-colnames(simulated_OPCs) = paste0(colnames(simulated_OPCs), '_', colData(simulated_OPCs)$cell_type)
-rowData(simualted_Micro) = rowData(simualted_Micro)[, 'Gene', drop=F]
-colnames(simualted_Micro) = paste0(colnames(simualted_Micro), '_', colData(simualted_Micro)$cell_type)
+# rowData(simulated_NPCs) = rowData(simulated_NPCs)[, 'Gene', drop=F]
+# colnames(simulated_NPCs) = paste0(colnames(simulated_NPCs), '_', colData(simulated_NPCs)$cell_type)
+# rowData(simulated_neurons) = rowData(simulated_neurons)[, 'Gene', drop=F]
+# colnames(simulated_neurons) = paste0(colnames(simulated_neurons), '_', colData(simulated_neurons)$cell_type)
+# rowData(simulated_GABA) = rowData(simulated_GABA)[, 'Gene', drop=F]
+# colnames(simulated_GABA) = paste0(colnames(simulated_GABA), '_', colData(simulated_GABA)$cell_type)
+# rowData(simulated_Astrocytes) = rowData(simulated_Astrocytes)[, 'Gene', drop=F]
+# colnames(simulated_Astrocytes) = paste0(colnames(simulated_Astrocytes), '_', colData(simulated_Astrocytes)$cell_type)
+# rowData(simulated_OPCs) = rowData(simulated_OPCs)[, 'Gene', drop=F]
+# colnames(simulated_OPCs) = paste0(colnames(simulated_OPCs), '_', colData(simulated_OPCs)$cell_type)
+# rowData(simualted_Micro) = rowData(simualted_Micro)[, 'Gene', drop=F]
+# colnames(simualted_Micro) = paste0(colnames(simualted_Micro), '_', colData(simualted_Micro)$cell_type)
 
-simulated_sce = cbind(simulated_NPCs, simulated_neurons, simulated_GABA, simulated_Astrocytes, simulated_OPCs, simualted_Micro)
+
+# --- total 5,000 genes among 6 cell types, but 100 genes each for different cell types
+simulated_sce = splatter_simu_brain(NPCs_init_params, nCells=55000, nGenes=5000, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+colData(simulated_sce)$cell_type = 'None'
+simulated_NPCs = splatter_simu_brain(NPCs_init_params, nCells=20000, nGenes=opt$DEG, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+colData(simulated_NPCs)$cell_type = 'NPC'
+simulated_OPCs = splatter_simu_brain(OPC_init_params, nCells=5000, nGenes=opt$DEG, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+colData(simulated_OPCs)$cell_type = 'OPC'
+simulated_Astrocytes = splatter_simu_brain(Astrocytes_init_params, nCells=5000, nGenes=opt$DEG, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+colData(simulated_Astrocytes)$cell_type = 'Astrocytes'
+simulated_neurons = splatter_simu_brain(Neurons_init_params, nCells=5000, nGenes=opt$DEG, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+colData(simulated_neurons)$cell_type = 'Neurons'
+simulated_GABA = splatter_simu_brain(GABANeurons_init_params, nCells=5000, nGenes=opt$DEG, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+colData(simulated_GABA)$cell_type = 'GABA'
+simualted_Micro = splatter_simu_brain(Micro_init_params, nCells=15000, nGenes=opt$DEG, seed=seed, out.prob=0, nGroups=1, nBatches=1)
+colData(simualted_Micro)$cell_type = 'Microglia'
+
+
+# 1:200 NPC specific genes, 20000 cells
+counts(simulated_sce)[1:opt$DEG, 1:20000] = as.matrix(counts(simulated_NPCs))
+colnames(simulated_sce)[1:20000] = paste0(colnames(simulated_sce)[1:20000], '_', 'NPC')
+simulated_sce$cell_type[1:20000] = 'NPC'
+# 501:1000 Neurons specific genes
+counts(simulated_sce)[(opt$DEG+1):(2*opt$DEG), 20001:25000] = as.matrix(counts(simulated_neurons))
+simulated_sce$cell_type[20001:25000] = 'Neurons'
+# 1001:1500 GABA specific genes
+counts(simulated_sce)[(2*opt$DEG+1):(3*opt$DEG), 25001:30000] = as.matrix(counts(simulated_GABA))
+simulated_sce$cell_type[25001:30000] = 'GABA'
+# 1501:2000 Astrocytes specific genes
+counts(simulated_sce)[(3*opt$DEG+1):(4*opt$DEG), 30001:35000] = as.matrix(counts(simulated_Astrocytes))
+simulated_sce$cell_type[30001:35000] = 'Astrocytes'
+# 2001:2500 OPC specific genes
+counts(simulated_sce)[(4*opt$DEG+1):(5*opt$DEG), 35001:40000] = as.matrix(counts(simulated_OPCs))
+simulated_sce$cell_type[35001:40000] = 'OPC'
+# 2501:3000 Microglia specific genes
+counts(simulated_sce)[(5*opt$DEG+1):(6*opt$DEG), 40001:55000] = as.matrix(counts(simualted_Micro))
+simulated_sce$cell_type[40001:55000] = 'Microglia'
+
+# simulated_sce = cbind(simulated_NPCs, simulated_neurons, simulated_GABA, simulated_Astrocytes, simulated_OPCs, simualted_Micro)
 simulated_sce = logNormCounts(simulated_sce)
 simulated_sce = runPCA(simulated_sce)
 # u = uwot::umap(t(logcounts(simulated_sce)), n_neighbors = 2)

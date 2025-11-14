@@ -1,10 +1,10 @@
 import os, argparse
 import anndata
 from scipy.io import mmread
+import numpy as np
 import pandas as pd
 
-base_dir = "/net/mulan/home/wenjinma"
-data_dir = base_dir+os.sep+"data/spatial_simulation_brain"
+data_dir = '/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain'
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Run spaGCN on simulation data")
@@ -36,4 +36,10 @@ if __name__ == '__main__':
     t2_adata = anndata.AnnData(X=t2_mtx.T, obs=t2_metadata, var=pd.DataFrame(index=gene_names))
     adata = anndata.concat([t0_adata, t1_adata, t2_adata])
     adata.X = adata.X.toarray()
-    adata.write_h5ad(simulation_data_dir+os.sep+'adata.h5ad')
+
+    # --- downsample adata
+    n_cells = 6000
+    np.random.seed(args.seed)
+    idx = np.random.choice(adata.n_obs, n_cells, replace=False)
+    adata_sub = adata[idx, :]
+    adata_sub.write_h5ad(simulation_data_dir+os.sep+'adata_downsampled.h5ad')

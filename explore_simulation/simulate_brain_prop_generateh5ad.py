@@ -4,17 +4,24 @@ from scipy.io import mmread
 import numpy as np
 import pandas as pd
 
-data_dir = '/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop'
-
 def parse_args():
     parser = argparse.ArgumentParser(description="Generate simulation h5ad")
     parser.add_argument('--seed', type=int, help='Simulation seed')
     parser.add_argument('--prop', type=float, help='Major cell type proportion')
+    parser.add_argument('--DEG', type=int, help='Major cell type proportion')
+    parser.add_argument('--mixedNPCs', action='store_true', help='Whether the NPCs is a mixture')
+    parser.add_argument('--regionNPCs', action='store_true', help='Whether the NPCs is region specific')
     args = parser.parse_args()
     return args
 
 if __name__ == '__main__':
     args = parse_args()
+    if args.mixedNPCs:
+        data_dir = f'/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_mixedNPCs_DEG{args.DEG}'
+    elif args.regionNPCs:
+        data_dir = f'/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_regionNPCs_DEG{args.DEG}'
+    else:
+        data_dir = f'/net/zootopia/disk1/wenjinma/data/spatial_simulation_brain_prop_DEG{args.DEG}'
     simulation_data_dir = data_dir+os.sep+str(args.seed)+os.sep+'prop_'+str(args.prop)
     # load data from three time points
     t0_mtx = mmread(simulation_data_dir+os.sep+'t0.mtx')

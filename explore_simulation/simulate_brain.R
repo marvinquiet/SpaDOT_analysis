@@ -43,9 +43,6 @@ scenario_dir = file.path(result_dir, seed, paste(x_DEG, y_DEG, sep='_'))
 dir.create(scenario_dir, showWarnings=F)
 
 #' estimate for once and use it later to do simulation
-# NPCs_init_params = splatter_estimate_params('/net/zootopia/disk1/wenjinma/data/spatial_simulation', cell_type='Stem cells')
-# saveRDS(NPCs_init_params, file=file.path(result_dir, "NPCs_init_params_pFC_for_LIBD.RDS"))
-NPCs_init_params = readRDS(file.path(result_dir, "NPCs_init_params_pFC_for_LIBD.RDS"))
 #Neurons_init_params = splatter_estimate_params(file.path(base_dir, "data/spatial_simulation"), cell_type='Neurons')
 #saveRDS(Neurons_init_params, file = file.path(result_dir, "Neurons_init_params_pFC_for_LIBD.RDS"))
 Neurons_init_params = readRDS(file.path(result_dir, "Neurons_init_params_pFC_for_LIBD.RDS"))
@@ -156,12 +153,12 @@ sub_simulated_GABA = simulated_GABA[, !idx]
 simulated_sce = cbind(sub_simulated_neurons, sub_simulated_GABA, simulated_Astrocytes, simulated_OPC)
 
 simulated_sce = logNormCounts(simulated_sce)
-simulated_sce = runUMAP(simulated_sce)
+simulated_sce = runPCA(simulated_sce)
 colData(simulated_sce)$label = paste0(colData(simulated_sce)$Group, '-', colData(simulated_sce)$Batch)
-g = plotUMAP(simulated_sce, colour_by = "cell_type", shape_by = "Group")
-ggsave(file.path(scenario_dir, 'simulated_sce_UMAP_Group.png'))
-g = plotUMAP(simulated_sce, colour_by = "cell_type", shape_by = "Batch")
-ggsave(file.path(scenario_dir, 'simulated_sce_UMAP_Batch.png'))
+g = plotPCA(simulated_sce, colour_by = "cell_type", shape_by = "Group")
+ggsave(file.path(scenario_dir, 'simulated_sce_PCA_Group.png'))
+g = plotPCA(simulated_sce, colour_by = "cell_type", shape_by = "Batch")
+ggsave(file.path(scenario_dir, 'simulated_sce_PCA_Batch.png'))
 # saveHDF5SummarizedExperiment(simulated_sce, scenario_dir, prefix="simulated_sce")
 
 ## remove cells with no genes expressed
@@ -173,7 +170,8 @@ ggsave(file.path(scenario_dir, 'simulated_sce_UMAP_Batch.png'))
 
 colData(simulated_sce)$label = paste0(colData(simulated_sce)$Group, '-', colData(simulated_sce)$Batch)
 ## assign count data
-scenario_props = c(0.45, 0.45, 0.05, 0.05)
+# scenario_props = c(0.45, 0.45, 0.05, 0.05)
+scenario_props = c(0.7, 0.1, 0.1, 0.1)
 celltype_labels = c('Neurons', 'GABA', 'Astrocytes', 'OPC')
 names(scenario_props) = celltype_labels
 for (timepoint in names(tp_clusters)) {
