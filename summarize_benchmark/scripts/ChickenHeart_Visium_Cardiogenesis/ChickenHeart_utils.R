@@ -1,38 +1,56 @@
-plot_pred_label = function(latent_adata, color_col, file_name, tp_color_palette=NULL, legend_ncol=2, height=4, width=10) {
-    require(cowplot)
-    timepoints = unique(latent_adata$obs$timepoint_original)
-    timepoints = sort(timepoints)
-    plot_list = list()
-    for (tp in timepoints) {
-        g = ggplot(subset(latent_adata$obs, timepoint_original == tp), aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + 
-        geom_point(size=0.5) +
-        guides(color = guide_legend(ncol=legend_ncol, title=NULL)) + 
-        theme_void() + 
-        ggtitle(tp) + 
-        theme(legend.position = "bottom", plot.title=element_text(size=11, hjust=0.5))
-        if (!is.null(tp_color_palette)) {
-            g = g + scale_color_manual(values=tp_color_palette)
-        }
-        g = g + coord_fixed(ratio = 1)
-        plot_list[[tp]] = g
-    }
-    plot_grid(plotlist=plot_list, rel_heights=c(0.5, 0.6, 0.9, 1), ncol=length(timepoints), align = "hv", axis = "tblr")
-    ggsave(file_name, height=height, width=width)
 
-    # g = ggplot(df, aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + geom_point(size=0.5) +
-    #     facet_wrap(~timepoint_original, nrow=1, scale='free') +
-    #     theme_pubr() + 
-    #     theme(axis.text =element_blank(), axis.title=element_blank(),
-    #     axis.ticks = element_blank(),
-    #     axis.line=element_blank(),
-    #     legend.title = element_text(size=15),
-    #     legend.text = element_text(size=12)) + 
-    #     scale_color_discrete(name=color_legend_title)
-    # if (!is.null(tp_color_palette)) {
-    #     g = g + scale_color_manual(values=tp_color_palette)
-    # }
-    # ggsave(file_name, height=height, width=width)
+plot_pred_label = function(df, color_col, color_legend_title, file_name, tp_color_palette=NULL, height=4, width=10) {
+    g = ggplot(df, aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + geom_point(size=0.5) +
+        facet_wrap(~timepoint_original, nrow=1, scale='free') +
+        theme_pubr() + 
+        theme(axis.text =element_blank(), axis.title=element_blank(),
+        axis.ticks = element_blank(),
+        axis.line=element_blank(),
+        legend.title = element_text(size=15),
+        legend.text = element_text(size=12)) + 
+        scale_color_discrete(name=color_legend_title)
+    if (!is.null(tp_color_palette)) {
+        g = g + scale_color_manual(values=tp_color_palette, name=color_legend_title)
+    }
+    ggsave(file_name, height=height, width=width)
 }
+
+
+# plot_pred_label = function(latent_adata, color_col, file_name, tp_color_palette=NULL, legend_ncol=2, height=4, width=10) {
+#     require(cowplot)
+#     timepoints = unique(latent_adata$obs$timepoint_original)
+#     timepoints = sort(timepoints)
+#     plot_list = list()
+#     for (tp in timepoints) {
+#         g = ggplot(subset(latent_adata$obs, timepoint_original == tp), aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + 
+#         geom_point(size=0.5) +
+#         guides(color = guide_legend(ncol=legend_ncol, title=NULL)) + 
+#         theme_void() + 
+#         ggtitle(tp) + 
+#         theme(legend.position = "bottom", plot.title=element_text(size=11, hjust=0.5))
+#         if (!is.null(tp_color_palette)) {
+#             g = g + scale_color_manual(values=tp_color_palette)
+#         }
+#         g = g + coord_fixed(ratio = 1)
+#         plot_list[[tp]] = g
+#     }
+#     plot_grid(plotlist=plot_list, rel_heights=c(0.5, 0.6, 0.9, 1), ncol=length(timepoints), align = "hv", axis = "tblr")
+#     ggsave(file_name, height=height, width=width)
+
+#     # g = ggplot(df, aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + geom_point(size=0.5) +
+#     #     facet_wrap(~timepoint_original, nrow=1, scale='free') +
+#     #     theme_pubr() + 
+#     #     theme(axis.text =element_blank(), axis.title=element_blank(),
+#     #     axis.ticks = element_blank(),
+#     #     axis.line=element_blank(),
+#     #     legend.title = element_text(size=15),
+#     #     legend.text = element_text(size=12)) + 
+#     #     scale_color_discrete(name=color_legend_title)
+#     # if (!is.null(tp_color_palette)) {
+#     #     g = g + scale_color_manual(values=tp_color_palette)
+#     # }
+#     # ggsave(file_name, height=height, width=width)
+# }
 
 plot_OT_heatmap = function(timepoints, method, method_result_dir, tp_color_palette=NULL, prob_cutoff=0.2) {
     require(reshape2)

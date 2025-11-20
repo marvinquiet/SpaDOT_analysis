@@ -74,15 +74,28 @@ plot_OT_heatmap(timepoints, 'spaDOT', file.path(result_dir, 'explore_GATVAE-SVGP
 
 
 # load SVGP results
-SVGP_pred_labels = read.csv(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ATAC-Visium_noremoval_results', 'SVGPVAE_predictions.csv'), header=T, row.names=1)
+# SVGP_pred_labels = read.csv(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ATAC-Visium_noremoval_results', 'SVGPVAE_predictions.csv'), header=T, row.names=1)
+SVGP_pred_labels = read.csv(file.path(result_dir, 'explore_SpaDOT', 'ATAC-Visium_noremoval_results', 'SVGPVAE_predictions.csv'), header=T, row.names=1)
 latent_adata$obs$SVGP_pred_labels = SVGP_pred_labels[latent_adata$obs_names, 'pred_labels']
 latent_adata$obs$SVGP_pred_labels = as.factor(latent_adata$obs$SVGP_pred_labels)
 plot_pred_label(latent_adata$obs, color_col='SVGP_pred_labels', color_legend_title='spaDOT SVGP Predicted Labels', file_name=file.path(spatial_layout_dir, 'spaDOT_SVGP_prediction.png'))
 # load GAT results
-GAT_pred_labels = read.csv(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ATAC-Visium_noremoval_results', 'GATVAE_predictions.csv'), header=T, row.names=1)
+# GAT_pred_labels = read.csv(file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ATAC-Visium_noremoval_results', 'GATVAE_predictions.csv'), header=T, row.names=1)
+GAT_pred_labels = read.csv(file.path(result_dir, 'explore_SpaDOT', 'ATAC-Visium_noremoval_results', 'GATVAE_predictions.csv'), header=T, row.names=1)
 latent_adata$obs$GAT_pred_labels = GAT_pred_labels[latent_adata$obs_names, 'pred_labels']
 latent_adata$obs$GAT_pred_labels = as.factor(latent_adata$obs$GAT_pred_labels)
 plot_pred_label(latent_adata$obs, color_col='GAT_pred_labels', color_legend_title='spaDOT GAT Predicted Labels', file_name=file.path(spatial_layout_dir, 'spaDOT_GAT_prediction.png'))
+
+# calculate LISI for SVGP / GAT
+library(lisi)
+for (tp in unique(latent_adata$obs$timepoint)) {
+    tp_latent_adata = latent_adata[latent_adata$obs$timepoint == tp, ]
+    locations = data.frame(x=tp_latent_adata$obs$pixel_x, y=tp_latent_adata$obs$pixel_y)
+    lisi = compute_lisi(locations, tp_latent_adata$obs, c('SVGP_pred_labels', 'GAT_pred_labels'))
+    median_lisi = median(lisi[, 1])
+    cat(tp, median(lisi[, 1]), median(lisi[, 2]), '\n')
+}
+
 
 # --- load all methods' results
 # spatialPCA

@@ -8,17 +8,6 @@ import matplotlib.pyplot as plt
 # --- load my scripts
 from utils import *
 
-# random_seed = 1234
-# np.random.seed(random_seed)
-# import rpy2.robjects as robjects
-# robjects.r.library("mclust")
-
-# import rpy2.robjects.numpy2ri
-# rpy2.robjects.numpy2ri.activate()
-# r_random_seed = robjects.r['set.seed']
-# r_random_seed(random_seed)
-# rmclust = robjects.r['Mclust']
-
 def analyze_simulation_complexity(data_dir, data_prefix):
     # load data
     import random
@@ -125,11 +114,13 @@ def analyze_STRS_complexity(data_dir):
 # Generate clustering metrics for different methods: SpatialPCA, GraphST, SEDR, spaGCN, spaVAE, STAligner, PRECAST, spatiAlign, SPIRAL, STADIAN, spaDOT
 def analyze_spaDOT_domains(result_dir, result_prefix,
                            label_key = "annotation", 
-                           rename_dict={"annotation": "true_labels", "kmeans": "pred_labels"},
+                           rename_dict={"annotation": "true_labels"},
                            method='spaDOT', latent_index=None):
     # --- spaDOT --- 
     spaDOT_results_dir = result_dir+os.sep+"explore_"+method+os.sep+result_prefix
     spaDOT_adata = anndata.read_h5ad(spaDOT_results_dir+os.sep+'final_latent.h5ad')
+    if 'kmeans' in spaDOT_adata.obs:
+        spaDOT_adata.obs = spaDOT_adata.obs.drop('kmeans', axis=1)
     if latent_index is not None:
         spaDOT_adata = spaDOT_adata[:, latent_index].copy()
     spaDOT_results_list = []
@@ -137,16 +128,17 @@ def analyze_spaDOT_domains(result_dir, result_prefix,
     for tp in set(spaDOT_adata.obs['timepoint']):
         tp_adata = spaDOT_adata[spaDOT_adata.obs['timepoint']==tp]
         tp_emb = tp_adata.X
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
-        # run mclust_R, does not have a better performance
-        # tp_mclust = rmclust(tp_emb, len(set(tp_adata.obs[label_key])), 'EEE') # EEE is the model name
-        # tp_adata.obs['mclust'] = np.array(tp_mclust[-2]).astype('int').astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         spaDOT_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     spaDOT_results = pd.concat(spaDOT_results_list)
     spaDOT_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(spaDOT_results, spaDOT_results_dir, method)
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in spaDOT_results.columns:
+            analyze_domain_metrics(spaDOT_results, spaDOT_results_dir, method, clustering)
+
     try:
         compute_OT_heatmap(kmeans_dict, spaDOT_results_dir, method=method)
     except RuntimeError as e:
@@ -158,22 +150,27 @@ def analyze_spaDOT_domains(result_dir, result_prefix,
 
 def analyze_spatialPCA_domains(result_dir, result_prefix, 
                                label_key="label",
-                               rename_dict={"label": "true_labels", "kmeans": "pred_labels", "row": "pixel_x", "col": "pixel_y"}):
+                               rename_dict={"label": "true_labels", "row": "pixel_x", "col": "pixel_y"}):
     # --- SpatialPCA --- 
     spatialPCA_results_dir = result_dir+os.sep+"explore_spatialPCA"+os.sep+result_prefix
     spatialPCA_results_df = pd.read_csv(spatialPCA_results_dir+os.sep+'spatialPCA_results.csv', index_col=0)
+    if 'kmeans' in spatialPCA_results_df.columns:
+        spatialPCA_results_df = spatialPCA_results_df.drop('kmeans', axis=1)
     spatialPCA_results_list = []
     kmeans_dict = dict()
     for tp in set(spatialPCA_results_df['timepoint']):
         tp_spatialPCA_results = spatialPCA_results_df[spatialPCA_results_df['timepoint']==tp]
         tp_emb = tp_spatialPCA_results.iloc[:, :20].to_numpy()
-        tp_kmeans = KMeans(n_clusters=len(set(tp_spatialPCA_results[label_key])), random_state=0).fit(tp_emb)
-        tp_spatialPCA_results['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_spatialPCA_results[label_key])))
+        tp_cluster_df.index = tp_spatialPCA_results.index
+        tp_spatialPCA_results = pd.concat([tp_spatialPCA_results, tp_cluster_df], axis=1)
         spatialPCA_results_list.append(tp_spatialPCA_results)
         kmeans_dict[tp] = tp_kmeans
     spatialPCA_results = pd.concat(spatialPCA_results_list)
     spatialPCA_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(spatialPCA_results, spatialPCA_results_dir, "spatialPCA")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in spatialPCA_results.columns:
+            analyze_domain_metrics(spatialPCA_results, spatialPCA_results_dir, "spatialPCA", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, spatialPCA_results_dir, method='spatialPCA')
     except RuntimeError as e:
@@ -184,7 +181,7 @@ def analyze_spatialPCA_domains(result_dir, result_prefix,
 
 def analyze_GraphST_domains(result_dir, result_prefix,
                             label_key="annotation",
-                            rename_dict={"annotation": "true_labels", "kmeans": "pred_labels"}):
+                            rename_dict={"annotation": "true_labels"}):
     # --- GraphST ---
     GraphST_results_dir = result_dir+os.sep+"explore_GraphST"+os.sep+result_prefix
     GraphST_adata = anndata.read_h5ad(GraphST_results_dir+os.sep+'GraphST_adata.h5ad')
@@ -193,13 +190,16 @@ def analyze_GraphST_domains(result_dir, result_prefix,
     for tp in set(GraphST_adata.obs['timepoint']):
         tp_adata = GraphST_adata[GraphST_adata.obs['timepoint'] == tp]
         tp_emb = tp_adata.obsm['emb']
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         GraphST_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     GraphST_results = pd.concat(GraphST_results_list)
     GraphST_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(GraphST_results, GraphST_results_dir, "GraphST")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in GraphST_results.columns:
+            analyze_domain_metrics(GraphST_results, GraphST_results_dir, "GraphST", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, GraphST_results_dir, method='GraphST')
     except RuntimeError as e:
@@ -218,15 +218,18 @@ def analyze_SEDR_domains(result_dir, result_prefix,
     kmeans_dict = dict()
     for tp in set(SEDR_adata.obs['timepoint']):
         tp_adata = SEDR_adata[SEDR_adata.obs['timepoint'] == tp]
-        tp_emb = tp_adata.obsm['SEDR.Harmony']
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_emb = tp_adata.obsm['SEDR.Harmony'].values
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         SEDR_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     SEDR_results = pd.concat(SEDR_results_list)
     SEDR_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(SEDR_results, SEDR_results_dir, "SEDR")
-    # capture Runtime Error
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in SEDR_results.columns:
+            analyze_domain_metrics(SEDR_results, SEDR_results_dir, "SEDR", clustering)
+
     try:
         compute_OT_heatmap(kmeans_dict, SEDR_results_dir, method='SEDR')
     except RuntimeError as e:
@@ -237,7 +240,7 @@ def analyze_SEDR_domains(result_dir, result_prefix,
 
 def analyze_spaGCN_domains(result_dir, result_prefix,
                            label_key="annotation",
-                           rename_dict={"annotation": "true_labels", "kmeans": "pred_labels"}):
+                           rename_dict={"annotation": "true_labels"}):
     # --- spaGCN ---
     spaGCN_results_dir = result_dir+os.sep+"explore_spaGCN"+os.sep+result_prefix
     spaGCN_adata = anndata.read_h5ad(spaGCN_results_dir+os.sep+'spaGCN.h5ad')
@@ -246,13 +249,16 @@ def analyze_spaGCN_domains(result_dir, result_prefix,
     for tp in set(spaGCN_adata.obs['timepoint']):
         tp_adata = spaGCN_adata[spaGCN_adata.obs['timepoint'] == tp]
         tp_emb = tp_adata.obsm['spaGCN_embed']
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         spaGCN_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     spaGCN_results = pd.concat(spaGCN_results_list)
     spaGCN_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(spaGCN_results, spaGCN_results_dir, "spaGCN")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in spaGCN_results.columns:
+            analyze_domain_metrics(spaGCN_results, spaGCN_results_dir, "spaGCN", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, spaGCN_results_dir, method='spaGCN')
     except RuntimeError as e:
@@ -263,7 +269,7 @@ def analyze_spaGCN_domains(result_dir, result_prefix,
 
 def analyze_spaVAE_domains(result_dir, result_prefix,
                            label_key="annotation",
-                           rename_dict={"annotation": "true_labels", "kmeans": "pred_labels"}):
+                           rename_dict={"annotation": "true_labels"}):
     # --- spaVAE ---
     spaVAE_results_dir = result_dir+os.sep+"explore_spaVAE"+os.sep+result_prefix
     metadata_files = [f for f in os.listdir(spaVAE_results_dir) if f.endswith("_metadata.csv")]
@@ -277,13 +283,17 @@ def analyze_spaVAE_domains(result_dir, result_prefix,
     for tp in set(latent_adata.obs['timepoint']):
         tp_adata = latent_adata[latent_adata.obs['timepoint'] == tp]
         tp_emb = tp_adata.X
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         spaVAE_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     spaVAE_results = pd.concat(spaVAE_results_list)
     spaVAE_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(spaVAE_results, spaVAE_results_dir, "spaVAE")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in spaVAE_results.columns:
+            analyze_domain_metrics(spaVAE_results, spaVAE_results_dir, "spaVAE", clustering)
+
     try:
         compute_OT_heatmap(kmeans_dict, spaVAE_results_dir, method='spaVAE')
     except RuntimeError as e:
@@ -294,7 +304,7 @@ def analyze_spaVAE_domains(result_dir, result_prefix,
 
 def analyze_STAligner_domains(result_dir, result_prefix,
                               label_key="annotation",
-                              rename_dict={"annotation": "true_labels", "kmeans": "pred_labels"}):
+                              rename_dict={"annotation": "true_labels"}):
     # --- STAligner ---
     STAligner_results_dir = result_dir+os.sep+"explore_STAligner"+os.sep+result_prefix
     STAligner_adata = anndata.read_h5ad(STAligner_results_dir+os.sep+'STAligner_adata.h5ad')
@@ -303,13 +313,16 @@ def analyze_STAligner_domains(result_dir, result_prefix,
     for tp in set(STAligner_adata.obs['timepoint']):
         tp_adata = STAligner_adata[STAligner_adata.obs['timepoint'] == tp]
         tp_emb = tp_adata.obsm['STAligner']
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         STAligner_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     STAligner_results = pd.concat(STAligner_results_list)
     STAligner_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(STAligner_results, STAligner_results_dir, "STAligner")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in STAligner_results.columns:
+            analyze_domain_metrics(STAligner_results, STAligner_results_dir, "STAligner", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, STAligner_results_dir, method='STAligner')
     except RuntimeError as e:
@@ -320,7 +333,7 @@ def analyze_STAligner_domains(result_dir, result_prefix,
 
 def analyze_PRECAST_domains(result_dir, result_prefix,
                             label_key="annotation",
-                            rename_dict={"label": "true_labels", "kmeans": "pred_labels", "row": "pixel_x", "col": "pixel_y"}
+                            rename_dict={"label": "true_labels", "row": "pixel_x", "col": "pixel_y"}
                             ):
     # --- PRECAST ---
     PRECAST_results_dir = result_dir+os.sep+"explore_PRECAST"+os.sep+result_prefix
@@ -330,13 +343,17 @@ def analyze_PRECAST_domains(result_dir, result_prefix,
     for tp in set(PRECAST_results_df['timepoint']):
         tp_PRECAST_results = PRECAST_results_df[PRECAST_results_df['timepoint']==tp]
         tp_emb = tp_PRECAST_results.iloc[:, :15].to_numpy()
-        tp_kmeans = KMeans(n_clusters=len(set(tp_PRECAST_results[label_key])), random_state=0).fit(tp_emb)
-        tp_PRECAST_results['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_PRECAST_results[label_key])))
+        tp_cluster_df.index = tp_PRECAST_results.index
+        tp_PRECAST_results = pd.concat([tp_PRECAST_results, tp_cluster_df], axis=1)
         PRECAST_results_list.append(tp_PRECAST_results)
         kmeans_dict[tp] = tp_kmeans
     PRECAST_results = pd.concat(PRECAST_results_list)
     PRECAST_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(PRECAST_results, PRECAST_results_dir, "PRECAST")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in PRECAST_results.columns:
+            analyze_domain_metrics(PRECAST_results, PRECAST_results_dir, "PRECAST", clustering)
+
     try:
         compute_OT_heatmap(kmeans_dict, PRECAST_results_dir, method="PRECAST")
     except RuntimeError as e:
@@ -347,7 +364,7 @@ def analyze_PRECAST_domains(result_dir, result_prefix,
 
 def analyze_spatiAlign_domains(result_dir, result_prefix,
                                label_key="annotation",
-                               rename_dict={"annotation": "true_labels", "kmeans": "pred_labels"}):
+                               rename_dict={"annotation": "true_labels"}):
     # --- spatiAlign ---
     spatiAlign_results_dir = result_dir+os.sep+"explore_spatiAlign"+os.sep+result_prefix
     # list all res/correct_data*.h5ad
@@ -363,13 +380,16 @@ def analyze_spatiAlign_domains(result_dir, result_prefix,
     for tp in set(merge_data.obs['timepoint']):
         tp_adata = merge_data[merge_data.obs['timepoint'] == tp]
         tp_emb = tp_adata.obsm['correct']
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         spatiAlign_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     spatiAlign_results = pd.concat(spatiAlign_results_list)
     spatiAlign_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(spatiAlign_results, spatiAlign_results_dir, "spatiAlign")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in spatiAlign_results.columns:
+            analyze_domain_metrics(spatiAlign_results, spatiAlign_results_dir, "spatiAlign", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, spatiAlign_results_dir, method="spatiAlign")
     except RuntimeError as e:
@@ -380,7 +400,7 @@ def analyze_spatiAlign_domains(result_dir, result_prefix,
 
 def analyze_SPIRAL_domains(result_dir, result_prefix,
                            label_key="annotation",
-                           rename_dict={"annotation": "true_labels", "kmeans": "pred_labels"}):
+                           rename_dict={"annotation": "true_labels"}):
     # --- SPIRAL ---
     SPIRAL_results_dir = result_dir+os.sep+"explore_SPIRAL"+os.sep+result_prefix
     SPIRAL_adata = anndata.read_h5ad(SPIRAL_results_dir+os.sep+'SPIRAL_corrected.h5ad')
@@ -389,13 +409,16 @@ def analyze_SPIRAL_domains(result_dir, result_prefix,
     for tp in set(SPIRAL_adata.obs['timepoint']):
         tp_adata = SPIRAL_adata[SPIRAL_adata.obs['timepoint'] == tp]
         tp_emb = tp_adata.obsm['spiral']
-        tp_kmeans = KMeans(n_clusters=len(set(tp_adata.obs[label_key])), random_state=0).fit(tp_emb)
-        tp_adata.obs['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_adata.obs[label_key])))
+        tp_cluster_df.index = tp_adata.obs_names
+        tp_adata.obs = pd.concat([tp_adata.obs, tp_cluster_df], axis=1)
         SPIRAL_results_list.append(tp_adata.obs)
         kmeans_dict[tp] = tp_kmeans
     SPIRAL_results = pd.concat(SPIRAL_results_list)
     SPIRAL_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(SPIRAL_results, SPIRAL_results_dir, "SPIRAL")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in SPIRAL_results.columns:
+            analyze_domain_metrics(SPIRAL_results, SPIRAL_results_dir, "SPIRAL", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, SPIRAL_results_dir, method='SPIRAL')
     except RuntimeError as e:
@@ -406,7 +429,7 @@ def analyze_SPIRAL_domains(result_dir, result_prefix,
 
 def analyze_STADIA_domains(result_dir, result_prefix,
                            label_key="label",
-                           rename_dict={"label": "true_labels", "cluster": "pred_labels", "row": "pixel_x", "col": "pixel_y"}):
+                           rename_dict={"label": "true_labels", "row": "pixel_x", "col": "pixel_y"}):
     # --- STADIA ---
     STADIA_results_dir = result_dir+os.sep+"explore_STADIA"+os.sep+result_prefix
     STADIA_results_df = pd.read_csv(STADIA_results_dir+os.sep+'STADIA_results.csv', index_col=0)
@@ -415,13 +438,16 @@ def analyze_STADIA_domains(result_dir, result_prefix,
     for tp in set(STADIA_results_df['timepoint']):
         tp_STADIA_results = STADIA_results_df[STADIA_results_df['timepoint']==tp]
         tp_emb = tp_STADIA_results.iloc[:, :35].to_numpy()
-        tp_kmeans = KMeans(n_clusters=len(set(tp_STADIA_results[label_key])), random_state=0).fit(tp_emb)
-        tp_STADIA_results['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_STADIA_results[label_key])))
+        tp_cluster_df.index = tp_STADIA_results.index
+        tp_STADIA_results = pd.concat([tp_STADIA_results, tp_cluster_df], axis=1)
         STADIA_results_list.append(tp_STADIA_results)
         kmeans_dict[tp] = tp_kmeans
     STADIA_results = pd.concat(STADIA_results_list)
     STADIA_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(STADIA_results, STADIA_results_dir, "STADIA")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in STADIA_results.columns:
+            analyze_domain_metrics(STADIA_results, STADIA_results_dir, "STADIA", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, STADIA_results_dir, method='STADIA')
     except RuntimeError as e:
@@ -433,7 +459,7 @@ def analyze_STADIA_domains(result_dir, result_prefix,
 
 def analyze_STAMP_domains(result_dir, result_prefix,
                            label_key="label",
-                           rename_dict={"label": "true_labels", "cluster": "pred_labels"}):
+                           rename_dict={"label": "true_labels"}):
     # --- STAMP ---
     STAMP_results_dir = result_dir+os.sep+"explore_STAMP"+os.sep+result_prefix
     STAMP_results_df = pd.read_csv(STAMP_results_dir+os.sep+'STAMP_topic_proportions.csv', index_col=0)
@@ -443,13 +469,16 @@ def analyze_STAMP_domains(result_dir, result_prefix,
     for tp in set(STAMP_results_df['timepoint']):
         tp_STAMP_results = STAMP_results_df[STAMP_results_df['timepoint']==tp]
         tp_emb = tp_STAMP_results.loc[:, STAMP_cols].to_numpy()
-        tp_kmeans = KMeans(n_clusters=len(set(tp_STAMP_results[label_key])), random_state=0).fit(tp_emb)
-        tp_STAMP_results['kmeans'] = tp_kmeans.labels_.astype(str)
+        tp_cluster_df, tp_kmeans = obtain_clustering(tp_emb, n_clusters=len(set(tp_STAMP_results[label_key])))
+        tp_cluster_df.index = tp_STAMP_results.index
+        tp_STAMP_results = pd.concat([tp_STAMP_results, tp_cluster_df], axis=1)
         STAMP_results_list.append(tp_STAMP_results)
         kmeans_dict[tp] = tp_kmeans
     STAMP_results = pd.concat(STAMP_results_list)
     STAMP_results.rename(columns=rename_dict, inplace=True)
-    analyze_domain_metrics(STAMP_results, STAMP_results_dir, "STAMP")
+    for clustering in ['kmeans', 'hc', 'mclust', 'leiden', 'louvain']:
+        if clustering in STAMP_results.columns:
+            analyze_domain_metrics(STAMP_results, STAMP_results_dir, "STAMP", clustering)
     try:
         compute_OT_heatmap(kmeans_dict, STAMP_results_dir, method='STAMP')
     except RuntimeError as e:

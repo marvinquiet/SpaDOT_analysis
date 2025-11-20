@@ -14,32 +14,102 @@ from tqdm import trange
 
 from OT_loss.ot_solvers import compute_transport_map
 
+from rpy2.robjects import r
+import rpy2.robjects as robjects
+robjects.r.library("mclust")
+from rpy2.robjects import numpy2ri
+numpy2ri.activate()
+r_random_seed = robjects.r['set.seed']
+rmclust = robjects.r['Mclust']
+
+def find_resolution_for_k(adata, target_k, method='leiden',
+                          min_r=1e-4, max_r=5.0, max_iter=20):
+    iter = 0
+    k = 0
+    while iter < max_iter and k != target_k:
+        mid = (min_r + max_r) / 2
+        if method == 'leiden':
+            sc.tl.leiden(adata, resolution=mid)
+        else:
+            sc.tl.louvain(adata, resolution=mid)
+        k = adata.obs[method].nunique()
+        if k > target_k:
+            max_r = mid
+        else:
+            min_r = mid
+        iter += 1
+    if k != target_k:
+        return None
+    else:
+        return adata.obs[method].values
+
+
+# --- obtain different clustering results
+def obtain_clustering(emb, n_clusters, random_state=0):
+    from sklearn.cluster import AgglomerativeClustering
+    np.random.seed(random_state)
+    r_random_seed(random_state)
+    kmeans_model = KMeans(n_clusters=n_clusters, random_state=random_state).fit(emb)
+    kmeans_labels = kmeans_model.labels_.astype(str)
+    if emb.shape[1] > 200:
+        from sklearn.decomposition import PCA
+        pca = PCA(n_components=30)
+        emb = pca.fit_transform(emb)
+    mclust_model = rmclust(numpy2ri.py2rpy(emb.astype(float)), n_clusters, 'VVV')
+    if not r['is.null'](mclust_model)[0]:
+        mclust_labels = np.array(mclust_model[-2]).astype('int').astype(str)
+    hc_model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
+    hc_labels = hc_model.fit_predict(emb)
+    emb_adata = sc.AnnData(emb)
+    sc.pp.neighbors(emb_adata)
+    leiden_labels = find_resolution_for_k(emb_adata, target_k=n_clusters, method='leiden')
+    louvain_labels = find_resolution_for_k(emb_adata, target_k=n_clusters, method='louvain')
+    # generate final dataframe and return
+    cluster_df = pd.DataFrame({
+        'kmeans': kmeans_labels,
+        'hc': hc_labels
+        }
+    )
+    if not r['is.null'](mclust_model)[0]:
+        cluster_df['mclust'] = mclust_labels
+    if leiden_labels is not None:
+        cluster_df['leiden'] = leiden_labels
+    if louvain_labels is not None:
+        cluster_df['louvain'] = louvain_labels
+    return cluster_df, kmeans_model
+
+
 # --- analyze domain metrics including clustering metrics and domain continuity metrics
-def analyze_domain_metrics(res, result_dir, method):
+def analyze_domain_metrics(res, result_dir, method, clustering):
+    # clustering: clustering strategy
     timepoints = list(res["timepoint"].unique())
     timepoints.sort()
     res_dict = dict()
     for tp in timepoints:
-        tp_res = res[res["timepoint"]==tp]
-        # --- domain labels
-        tp_ARI = adjusted_rand_score(tp_res["true_labels"], tp_res["pred_labels"])
-        tp_NMI = normalized_mutual_info_score(tp_res["true_labels"], tp_res["pred_labels"])
-        tp_AMI = adjusted_mutual_info_score(tp_res["true_labels"], tp_res["pred_labels"])
-        tp_H = homogeneity_score(tp_res["true_labels"], tp_res["pred_labels"])
-        #print(f"{method} at timepoint {tp}: ARI={tp_ARI}, NMI={tp_NMI}, AMI={tp_AMI}, H={tp_H}")
-        # --- domain continuity
-        loc = np.array(tp_res[["pixel_x", "pixel_y"]])
-        pred = np.array(tp_res["pred_labels"])
-        tp_ASW = _compute_ASW(loc, pred)
-        tp_true_ASW = _compute_ASW(loc, np.array(tp_res["true_labels"]))
-        tp_PAS = _compute_PAS(loc, pred)
-        tp_true_PAS = _compute_PAS(loc, np.array(tp_res["true_labels"]))
-        tp_CHAOS = _compute_CHAOS(loc, pred)
-        tp_true_CHAOS = _compute_CHAOS(loc, np.array(tp_res["true_labels"]))
-        # tp_SCS = _compute_SCS(loc, pred)
-        #print(f"{method} at timepoint {tp}: ASW={tp_ASW}, PAS={tp_PAS}, CHAOS={tp_CHAOS}")
-        # save results
         res_dict[tp] = {}
+        tp_res = res[res["timepoint"]==tp]
+        loc = np.array(tp_res[["pixel_x", "pixel_y"]])
+        pred = np.array(tp_res[clustering])
+        tp_true_ASW = _compute_ASW(loc, np.array(tp_res["true_labels"]))
+        tp_true_PAS = _compute_PAS(loc, np.array(tp_res["true_labels"]))
+        tp_true_CHAOS = _compute_CHAOS(loc, np.array(tp_res["true_labels"]))
+        if pd.isna(pred).any():
+            tp_ARI, tp_NMI, tp_AMI, tp_H, tp_ASW, tp_PAS, tp_CHAOS = None, None, None, None, None, None, None
+        else: 
+            
+            # --- domain labels
+            tp_ARI = adjusted_rand_score(tp_res["true_labels"], pred)
+            tp_NMI = normalized_mutual_info_score(tp_res["true_labels"], pred)
+            tp_AMI = adjusted_mutual_info_score(tp_res["true_labels"], pred)
+            tp_H = homogeneity_score(tp_res["true_labels"], pred)
+            #print(f"{method} at timepoint {tp}: ARI={tp_ARI}, NMI={tp_NMI}, AMI={tp_AMI}, H={tp_H}")
+            # --- domain continuity
+            tp_ASW = _compute_ASW(loc, pred)
+            tp_PAS = _compute_PAS(loc, pred)
+            tp_CHAOS = _compute_CHAOS(loc, pred)
+            # tp_SCS = _compute_SCS(loc, pred)
+            #print(f"{method} at timepoint {tp}: ASW={tp_ASW}, PAS={tp_PAS}, CHAOS={tp_CHAOS}")
+        # save results
         res_dict[tp]["ARI"], res_dict[tp]["NMI"], res_dict[tp]["AMI"], res_dict[tp]["H"] = tp_ARI, tp_NMI, tp_AMI, tp_H
         # res_dict[tp]["ASW"], res_dict[tp]["PAS"], res_dict[tp]["CHAOS"], res_dict[tp]['SCS'] = tp_ASW, tp_PAS, tp_CHAOS, tp_SCS
         res_dict[tp]["ASW"], res_dict[tp]["PAS"], res_dict[tp]["CHAOS"] = tp_ASW, tp_PAS, tp_CHAOS
@@ -47,7 +117,7 @@ def analyze_domain_metrics(res, result_dir, method):
     res_df = pd.DataFrame(res_dict)
     res_df['avg'] = res_df.mean(axis=1)
     print(res_df)
-    res_df.to_csv(result_dir+os.sep+method+'_domain_metrics.csv')
+    res_df.to_csv(result_dir+os.sep+f'{method}_{clustering}_domain_metrics.csv')
     return res_df
 
 # --- analyze latent metrics

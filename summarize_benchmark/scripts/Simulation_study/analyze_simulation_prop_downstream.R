@@ -58,25 +58,29 @@ simu_df$X = NULL
 simu_df$method = factor(simu_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST', 'STAMP'))
 
 # --- calculate LISI for all methods
-# methods = unique(simu_df$method)
-# library(lisi)
-# timepoints = c('t0', 't1', 't2')
-# for (seed in simulation_seeds) {
-#     for (comb in simulation_combs) {
-#         for (method in methods) {
-#             pred_adata = read_h5ad(file.path(result_dir, paste0('explore_', method), 'simulation_prop_results', paste0(seed, '/', comb), 'prediction_adata.h5ad'))
-#             for (tp in unique(pred_adata$obs$timepoint)) {
-#                 tp_pred_adata = pred_adata[pred_adata$obs$timepoint == tp, ]
-#                 locations = data.frame(x=tp_pred_adata$obs$pixel_x, y=tp_pred_adata$obs$pixel_y)
-#                 lisi = compute_lisi(locations, tp_pred_adata$obs, c('pred_labels'))
-#                 median_lisi = median(lisi[, 1])
-#                 simu_df[nrow(simu_df)+1,] = c('median-LISI', tp, median_lisi, method, seed, comb)
-#             }
-#         }
-#     }
-# }
-# write.csv(simu_df, file.path(downstream_dir, "final_simulation_prop_domain_metrics.csv"), row.names=FALSE)
-
+methods = unique(simu_df$method)
+library(lisi)
+timepoints = c('t0', 't1', 't2')
+for (seed in simulation_seeds) {
+    for (comb in simulation_combs) {
+        for (method in methods) {
+            if (opt$mixedNPCs) {
+                pred_adata = read_h5ad(file.path(result_dir, paste0('explore_', method), paste0('simulation_prop_results_mixedNPCs_DEG', opt$DEG), paste0(seed, '/', comb), 'prediction_adata.h5ad'))
+            } else {
+                pred_adata = read_h5ad(file.path(result_dir, paste0('explore_', method), paste0('simulation_prop_results_DEG', opt$DEG), paste0(seed, '/', comb), 'prediction_adata.h5ad'))
+            }
+            
+            for (tp in unique(pred_adata$obs$timepoint)) {
+                tp_pred_adata = pred_adata[pred_adata$obs$timepoint == tp, ]
+                locations = data.frame(x=tp_pred_adata$obs$pixel_x, y=tp_pred_adata$obs$pixel_y)
+                lisi = compute_lisi(locations, tp_pred_adata$obs, c('pred_labels'))
+                median_lisi = median(lisi[, 1])
+                simu_df[nrow(simu_df)+1,] = c('median-LISI', tp, median_lisi, method, seed, comb)
+            }
+        }
+    }
+}
+write.csv(simu_df, file.path(downstream_dir, "final_simulation_prop_domain_metrics.csv"), row.names=FALSE)
 
 simu_df$value = as.numeric(simu_df$value)
 simu_df$comb = factor(simu_df$comb, levels=simulation_combs)

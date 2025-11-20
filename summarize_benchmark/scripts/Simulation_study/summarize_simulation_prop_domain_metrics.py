@@ -114,7 +114,7 @@ for simulation_comb in simulation_combinations:
     SPIRAL_adata = analyze_SPIRAL_domains(result_dir, result_prefix, label_key=annotation_key,
                                         rename_dict={annotation_key: "true_labels", "kmeans": "pred_labels"})
     simulation_prop_utils.visualize_spatial(SPIRAL_adata.obs, coord_x_key="pixel_x", coord_y_key="pixel_y", pred_label_key="pred_labels", result_dir=spatial_dir, method="SPIRAL")
-    utils.visualize_latent(SPIRAL_adata, use_rep_key='spiral', result_dir=latent_dir, method="SPIRAL")
+    # utils.visualize_latent(SPIRAL_adata, use_rep_key='spiral', result_dir=latent_dir, method="SPIRAL")
 
     STADIA_adata = analyze_STADIA_domains(result_dir, result_prefix, label_key='label',
                         rename_dict={'label': "true_labels", "kmeans": "pred_labels", "row": "pixel_x", "col": "pixel_y"})

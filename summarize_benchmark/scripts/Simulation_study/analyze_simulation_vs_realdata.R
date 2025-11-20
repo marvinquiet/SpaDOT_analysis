@@ -6,6 +6,7 @@ library(ggplot2)
 library(patchwork)
 library(ggpubr)
 library(dplyr)
+library(glue)
 
 # --- calculate concordance index and top-K overlap --- 
 c_index <- function(x, y) {
@@ -102,5 +103,57 @@ for (simu_comb in unique(simulation_final_ARI_avg$simu_comb)) {
 
 
 
-
 # load simulation prop results
+DEGs = c(100, 200, 500)
+for (DEG in DEGs) {
+    cat("------------DEG:", DEG, "\n")
+    simulation_result_dir = glue('/net/mulan/home/wenjinma/projects/SpaDOT_analysis/summarize_benchmark/figures/simulation_prop_figures_mixedNPCs_DEG{DEG}/simulation_downstream')
+    simulation_final = read.csv(file.path(simulation_result_dir, 'final_simulation_prop_domain_metrics.csv'), header=T)
+    simulation_final_ARI = simulation_final %>% filter(index=='ARI', timepoint == 'avg')
+    simulation_final_ARI_avg = simulation_final_ARI %>%
+        group_by(method, comb) %>%
+        summarize(value = mean(value)) %>%
+        ungroup() %>% as.data.frame()
+    methods = unique(simulation_final_ARI_avg$method)
+    for (comb in unique(simulation_final_ARI_avg$comb)) {
+        simu_subset =  simulation_final_ARI_avg[simulation_final_ARI_avg$comb == comb, ]
+        rownames(simu_subset) = simu_subset$method
+        print(paste0("Spearman correlation for simulation combination: ", comb))
+
+        res_mouse = cor.test(simu_subset[methods, ]$value,
+                            MouseOrganogenesis_final_ARI[methods, ]$value,
+                            method = "spearman")
+        res_chicken = cor.test(simu_subset[methods, ]$value,
+                                ChickenHeart_final_ARI[methods, ]$value,
+                                method = "spearman")
+        res_axolotl = cor.test(simu_subset[methods, ]$value,
+                                Axolotl_final_ARI[methods, ]$value,
+                                method = "spearman")
+        # Print formatted results
+        cat("MouseOrganogenesis:  rho =", round(res_mouse$estimate, 3),
+            ", p =", signif(res_mouse$p.value, 3), "\n")
+
+        cat("ChickenHeart:        rho =", round(res_chicken$estimate, 3),
+            ", p =", signif(res_chicken$p.value, 3), "\n")
+
+        cat("Axolotl:             rho =", round(res_axolotl$estimate, 3),
+            ", p =", signif(res_axolotl$p.value, 3), "\n")
+
+        # Printed concordance index
+        cat("MouseOrganogenesis Concordance Index:", round(c_index(simu_subset[methods, ]$value,
+                                                                    MouseOrganogenesis_final_ARI[methods, ]$value), 3), "\n")
+        cat("ChickenHeart Concordance Index:", round(c_index(simu_subset[methods, ]$value,
+                                                            ChickenHeart_final_ARI[methods, ]$value), 3), "\n")
+        cat("Axolotl Concordance Index:", round(c_index(simu_subset[methods, ]$value,
+                                                    Axolotl_final_ARI[methods, ]$value), 3), "\n")
+
+        # Printed top-5 overlap
+        k = 5
+        cat("MouseOrganogenesis Top-", k, " Overlap:", round(topk_overlap(simu_subset[methods, ]$value,
+                                                                        MouseOrganogenesis_final_ARI[methods, ]$value, k), 5), "\n")
+        cat("ChickenHeart Top-", k, " Overlap:", round(topk_overlap(simu_subset[methods, ]$value,
+                                                            ChickenHeart_final_ARI[methods, ]$value, k), 5), "\n")
+        cat("Axolotl Top-", k, " Overlap:", round(topk_overlap(simu_subset[methods, ]$value,
+                                                    Axolotl_final_ARI[methods, ]$value, k), 5), "\n")
+    }
+}
