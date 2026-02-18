@@ -136,7 +136,7 @@ for (metric in c('ARI', 'AMI', 'H')) {
 
     # plot per metric
     clustering_metric_df = clustering_df[clustering_df$timepoint != 'avg' & clustering_df$metric == metric, ]
-    clustering_metric_df$method = factor(clustering_metric_df$method, levels=c('SpaDOT', 'spatiAlign', 'SpatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST', 'STAMP'))
+    clustering_metric_df$method = factor(clustering_metric_df$method, levels=c('SpaDOT', 'spatiAlign', 'spatialPCA', 'spaVAE', 'SPIRAL', 'SEDR', 'STADIA', 'PRECAST', 'spaGCN', 'STAligner', 'GraphST', 'STAMP'))
     clustering_metric_df$clustering = factor(clustering_metric_df$clustering, levels=c('kmeans', 'leiden', 'louvain', 'mclust', 'hc'))
     p = ggplot() +
         geom_point(data=avg_clustering_metric_df, aes(x=method, y=value, color=method, group=method), size=6) +

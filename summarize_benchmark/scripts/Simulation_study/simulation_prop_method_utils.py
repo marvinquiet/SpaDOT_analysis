@@ -118,7 +118,11 @@ def analyze_spaDOT_domains(result_dir, result_prefix,
                            method='spaDOT', latent_index=None):
     # --- spaDOT --- 
     spaDOT_results_dir = result_dir+os.sep+"explore_"+method+os.sep+result_prefix
-    spaDOT_adata = anndata.read_h5ad(spaDOT_results_dir+os.sep+'latent.h5ad')
+    latent_file = spaDOT_results_dir+os.sep+'latent.h5ad'
+    if os.path.exists(latent_file):
+        spaDOT_adata = anndata.read_h5ad(spaDOT_results_dir+os.sep+'latent.h5ad')
+    else:
+        spaDOT_adata = anndata.read_h5ad(spaDOT_results_dir+os.sep+'final_latent.h5ad')
     if latent_index is not None:
         spaDOT_adata = spaDOT_adata[:, latent_index].copy()
     spaDOT_results_list = []
@@ -346,7 +350,8 @@ def analyze_spatiAlign_domains(result_dir, result_prefix,
         correct_adata = sc.read_h5ad(correc_adata_file)
         correct_adata.var['genes'] = correct_adata.var_names.tolist()
         correct_adata_list.append(correct_adata)
-    merge_data = anndata.AnnData.concatenate(*correct_adata_list)
+    #merge_data = anndata.AnnData.concatenate(*correct_adata_list)
+    merge_data = anndata.concat(correct_adata_list)
     spatiAlign_results_list = []
     kmeans_dict = dict()
     for tp in set(merge_data.obs['timepoint']):

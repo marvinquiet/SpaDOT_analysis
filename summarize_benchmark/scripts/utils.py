@@ -55,13 +55,17 @@ def obtain_clustering(emb, n_clusters, random_state=0):
         from sklearn.decomposition import PCA
         pca = PCA(n_components=30)
         emb = pca.fit_transform(emb)
-    mclust_model = rmclust(numpy2ri.py2rpy(emb.astype(float)), n_clusters, 'VVV')
+    mclust_model = rmclust(numpy2ri.py2rpy(emb.astype(float)), n_clusters, 'EEE') # VVV
     if not r['is.null'](mclust_model)[0]:
         mclust_labels = np.array(mclust_model[-2]).astype('int').astype(str)
     hc_model = AgglomerativeClustering(n_clusters=n_clusters, linkage='ward')
     hc_labels = hc_model.fit_predict(emb)
     emb_adata = sc.AnnData(emb)
-    sc.pp.neighbors(emb_adata)
+    sc.pp.neighbors(emb_adata, n_neighbors=6)
+    # sc.tl.leiden(emb_adata, resolution=0.1)
+    # leiden_labels = emb_adata.obs['leiden'].values
+    # sc.tl.louvain(emb_adata, resolution=0.1)
+    # louvain_labels = emb_adata.obs['louvain'].values
     leiden_labels = find_resolution_for_k(emb_adata, target_k=n_clusters, method='leiden')
     louvain_labels = find_resolution_for_k(emb_adata, target_k=n_clusters, method='louvain')
     # generate final dataframe and return
