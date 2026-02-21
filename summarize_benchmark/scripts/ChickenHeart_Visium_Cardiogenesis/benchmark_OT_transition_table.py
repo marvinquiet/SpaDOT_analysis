@@ -82,13 +82,13 @@ regions = latent_adata.obs['annotation'].unique().tolist()
 t0_t1_G = nx.DiGraph()
 t0_t1_G.add_nodes_from(['Epicardium- like', 'Outflow tract', 'Ventricle', 'Valves', 'Atria', 'Epicardium', 'Endothelium', 
                     'Trabecular LV and \nendocardium', 'Right ventricle', 'Compact LV and \ninter-ventricular septum'])
-t0_t1_G.add_edges_from( # suggested by chatGPT
+t0_t1_G.add_edges_from( # suggested by chatGPT based on name match
     [('Epicardium- like', 'Epicardium'),
     ('Ventricle', 'Trabecular LV and \nendocardium'),
     ('Ventricle', 'Right ventricle'),
     ('Ventricle', 'Compact LV and \ninter-ventricular septum'),
     ('Atria', 'Atria'),
-    ('Outflow tract', 'Valves'),
+    #('Outflow tract', 'Valves'),
     ('Valves', 'Valves')
 ])
 print(t0_t1_G.edges)

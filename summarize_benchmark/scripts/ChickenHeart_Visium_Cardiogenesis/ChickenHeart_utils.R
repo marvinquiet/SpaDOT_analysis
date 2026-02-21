@@ -1,56 +1,60 @@
 
-plot_pred_label = function(df, color_col, color_legend_title, file_name, tp_color_palette=NULL, height=4, width=10) {
-    g = ggplot(df, aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + geom_point(size=0.5) +
-        facet_wrap(~timepoint_original, nrow=1, scale='free') +
-        theme_pubr() + 
-        theme(axis.text =element_blank(), axis.title=element_blank(),
-        axis.ticks = element_blank(),
-        axis.line=element_blank(),
-        legend.title = element_text(size=15),
-        legend.text = element_text(size=12)) + 
-        scale_color_discrete(name=color_legend_title)
-    if (!is.null(tp_color_palette)) {
-        g = g + scale_color_manual(values=tp_color_palette, name=color_legend_title)
+#plot_pred_label = function(df, color_col, color_legend_title, file_name, color_legend_title="", tp_color_palette=NULL, height=4, width=10) {
+#    g = ggplot(df, aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + geom_point(size=0.5) +
+#        facet_wrap(~timepoint_original, nrow=1, scale='free') +
+#        theme_pubr(base_size = 14) + 
+#        theme(axis.text =element_blank(), axis.title=element_blank(),
+#        axis.ticks = element_blank(),
+#        axis.line=element_blank(),
+#        legend.title = element_text(size = 18, face = "bold"),
+#        legend.text = element_text(size=16)) + 
+#        scale_color_discrete(name=color_legend_title) + 
+#        guides(color = guide_legend(
+#            override.aes = list(size = 3)
+#        ))
+# 
+#    if (!is.null(tp_color_palette)) {
+#        g = g + scale_color_manual(values=tp_color_palette, name=color_legend_title)
+#    }
+#    ggsave(file_name, height=height, width=width)
+#}
+
+
+plot_pred_label = function(latent_adata, color_col, file_name, tp_color_palette=NULL, legend_ncol=2, height=4, width=10) {
+    require(cowplot)
+    timepoints = unique(latent_adata$obs$timepoint_original)
+    timepoints = sort(timepoints)
+    plot_list = list()
+    for (tp in timepoints) {
+        g = ggplot(subset(latent_adata$obs, timepoint_original == tp), aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + 
+        geom_point(size=0.5) +
+        guides(color = guide_legend(ncol=legend_ncol, override.aes = list(size = 4), title=NULL)) + 
+        theme_void() + 
+        ggtitle(tp) + 
+        theme(legend.position = "bottom", legend.text = element_text(size=12), plot.title=element_text(size=16, hjust=0.5))
+        if (!is.null(tp_color_palette)) {
+            g = g + scale_color_manual(values=tp_color_palette)
+        }
+        g = g + coord_fixed(ratio = 1)
+        plot_list[[tp]] = g
     }
+    plot_grid(plotlist=plot_list, rel_heights=c(0.5, 0.6, 0.9, 1), ncol=length(timepoints), align = "hv", axis = "tblr")
     ggsave(file_name, height=height, width=width)
+
+    # g = ggplot(df, aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + geom_point(size=0.5) +
+    #     facet_wrap(~timepoint_original, nrow=1, scale='free') +
+    #     theme_pubr() + 
+    #     theme(axis.text =element_blank(), axis.title=element_blank(),
+    #     axis.ticks = element_blank(),
+    #     axis.line=element_blank(),
+    #     legend.title = element_text(size=15),
+    #     legend.text = element_text(size=12)) + 
+    #     scale_color_discrete(name=color_legend_title)
+    # if (!is.null(tp_color_palette)) {
+    #     g = g + scale_color_manual(values=tp_color_palette)
+    # }
+    # ggsave(file_name, height=height, width=width)
 }
-
-
-# plot_pred_label = function(latent_adata, color_col, file_name, tp_color_palette=NULL, legend_ncol=2, height=4, width=10) {
-#     require(cowplot)
-#     timepoints = unique(latent_adata$obs$timepoint_original)
-#     timepoints = sort(timepoints)
-#     plot_list = list()
-#     for (tp in timepoints) {
-#         g = ggplot(subset(latent_adata$obs, timepoint_original == tp), aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + 
-#         geom_point(size=0.5) +
-#         guides(color = guide_legend(ncol=legend_ncol, title=NULL)) + 
-#         theme_void() + 
-#         ggtitle(tp) + 
-#         theme(legend.position = "bottom", plot.title=element_text(size=11, hjust=0.5))
-#         if (!is.null(tp_color_palette)) {
-#             g = g + scale_color_manual(values=tp_color_palette)
-#         }
-#         g = g + coord_fixed(ratio = 1)
-#         plot_list[[tp]] = g
-#     }
-#     plot_grid(plotlist=plot_list, rel_heights=c(0.5, 0.6, 0.9, 1), ncol=length(timepoints), align = "hv", axis = "tblr")
-#     ggsave(file_name, height=height, width=width)
-
-#     # g = ggplot(df, aes(x=pixel_x, y=pixel_y, color=!!sym(color_col))) + geom_point(size=0.5) +
-#     #     facet_wrap(~timepoint_original, nrow=1, scale='free') +
-#     #     theme_pubr() + 
-#     #     theme(axis.text =element_blank(), axis.title=element_blank(),
-#     #     axis.ticks = element_blank(),
-#     #     axis.line=element_blank(),
-#     #     legend.title = element_text(size=15),
-#     #     legend.text = element_text(size=12)) + 
-#     #     scale_color_discrete(name=color_legend_title)
-#     # if (!is.null(tp_color_palette)) {
-#     #     g = g + scale_color_manual(values=tp_color_palette)
-#     # }
-#     # ggsave(file_name, height=height, width=width)
-# }
 
 plot_OT_heatmap = function(timepoints, method, method_result_dir, tp_color_palette=NULL, prob_cutoff=0.2) {
     require(reshape2)
@@ -97,7 +101,7 @@ plot_OT_heatmap = function(timepoints, method, method_result_dir, tp_color_palet
             ) +
             labs(x = paste0(unname(timepoints_dict[next_tp]), " Domains"), 
                 y = paste0(unname(timepoints_dict[cur_tp]), " Domains")) +
-            theme_pubr() + 
+            theme_pubr(base_size=14) + 
             theme(legend.position="right",
                 axis.text.x = element_text(color=x_axis_colors, angle=45, hjust=1),
                 axis.text.y = element_text(color=y_axis_colors)
@@ -150,16 +154,16 @@ GO_analysis = function(timepoints, method, method_result_dir, tp_color_palette=N
                             qvalueCutoff = 0.05)
             write.csv(as.data.frame(tp_cluster_GO), file.path(method_result_dir, paste0(tp, '_', cluster, '_enrichment_clusterprofiler.csv')), quote=F)
             g = dotplot(tp_cluster_GO, showCategory=10)
-            ggsave(file.path(method_result_dir, paste0(tp, '_', cluster, '_enrichment_clusterprofiler.png')), width=8, height=6)
-            # tp_cluster_GO = enrichGO(gene = sub_tp_cluster_marker[1:min(100, length(sub_tp_cluster_marker))], 
-            #                 keyType = 'SYMBOL',
-            #                 OrgDb = org.Gg.eg.db, 
-            #                 ont = "BP", # Biological process
-            #                 pAdjustMethod = "BH", 
-            #                 qvalueCutoff = 0.05)
-            # write.csv(as.data.frame(tp_cluster_GO), file.path(method_result_dir, paste0(tp, '_', cluster, '_top100_enrichment_clusterprofiler.csv')), quote=F)
-            # g = dotplot(tp_cluster_GO, showCategory=10)
-            # ggsave(file.path(method_result_dir, paste0(tp, '_', cluster, '_top100_enrichment_clusterprofiler.png')), width=8, height=6)
+            ggsave(file.path(method_result_dir, paste0(tp, '_', cluster, '_enrichment_clusterprofiler.pdf')), width=6, height=4.5)
+            tp_cluster_GO = enrichGO(gene = sub_tp_cluster_marker[1:min(100, length(sub_tp_cluster_marker))], 
+                            keyType = 'SYMBOL',
+                            OrgDb = org.Gg.eg.db, 
+                            ont = "BP", # Biological process
+                            pAdjustMethod = "BH", 
+                            qvalueCutoff = 0.05)
+            write.csv(as.data.frame(tp_cluster_GO), file.path(method_result_dir, paste0(tp, '_', cluster, '_top100_enrichment_clusterprofiler.csv')), quote=F)
+            g = dotplot(tp_cluster_GO, showCategory=10)
+            ggsave(file.path(method_result_dir, paste0(tp, '_', cluster, '_top100_enrichment_clusterprofiler.pdf')), width=6, height=4.5)
         }
     }
 

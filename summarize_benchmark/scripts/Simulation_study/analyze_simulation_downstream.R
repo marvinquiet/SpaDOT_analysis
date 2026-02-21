@@ -99,15 +99,15 @@ for (tp in timepoints) {
     g = ggplot(subset(latent_adata$obs, timepoint == tp), aes(x=pixel_x, y=pixel_y, color=renamed_GT_labels)) + 
     geom_point() + theme_void() + 
     scale_color_manual(values=GT_custom_palette()) + 
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (is.null(g_total)) {
         g_total = g
     } else {
         g_total = g_total + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_ground_truth.png')), height=4, width=10)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_ground_truth.pdf')), height=4, width=10)
 
 #custom_palette = c(
 #    't0_0'='#EA3423',
@@ -146,15 +146,15 @@ for (tp in timepoints) {
     g = ggplot(subset(latent_adata$obs, timepoint == tp), aes(x=pixel_x, y=pixel_y, color=spaDOT_pred_labels)) + 
     geom_point() + theme_void() + 
     scale_color_manual(values=assign_colors(paste0(latent_adata$obs$timepoint, '_', latent_adata$obs$renamed_GT_labels), latent_adata$obs$spaDOT_pred_labels)) + 
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (is.null(g_total)) {
         g_total = g
     } else {
         g_total = g_total + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaDOT_prediction.png')), height=4, width=10)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaDOT_prediction.pdf')), height=4, width=10)
 
 
 spatiAlign_latent = read_h5ad(file.path(result_dir, 'explore_spatiAlign', 'simulation_results', sim_comb, 'prediction_adata.h5ad'))
@@ -168,15 +168,15 @@ for (tp in timepoints) {
     geom_point() + theme_void() + 
     scale_color_manual(values=assign_colors(paste0(latent_adata$obs$timepoint, '_', latent_adata$obs$renamed_GT_labels), 
                                             latent_adata$obs$spatiAlign_pred_labels)) + 
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (is.null(g_total)) {
         g_total = g
     } else {
         g_total = g_total + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spatiAlign_prediction.png')), height=4, width=10)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spatiAlign_prediction.pdf')), height=4, width=10)
 
 # graphST results
 graphST_latent = read_h5ad(file.path(result_dir, 'explore_GraphST', 'simulation_results', sim_comb, 'prediction_adata.h5ad'))
@@ -188,15 +188,15 @@ for (tp in timepoints) {
     geom_point() + theme_void() + 
     scale_color_manual(values=assign_colors(paste0(latent_adata$obs$timepoint, '_', latent_adata$obs$renamed_GT_labels),
                                                     latent_adata$obs$graphST_pred_labels)) +
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (is.null(g_total)) {
         g_total = g
     } else {
         g_total = g_total + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_graphST_prediction.png')), height=4, width=10)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_graphST_prediction.pdf')), height=4, width=10)
 
 spaVAE_latent = read_h5ad(file.path(result_dir, 'explore_spaVAE', 'simulation_results', sim_comb, 'prediction_adata.h5ad'))
 latent_adata$obs$spaVAE_pred_labels = spaVAE_latent$obs[latent_adata$obs_names, 'pred_labels']
@@ -207,15 +207,15 @@ for (tp in timepoints) {
     geom_point() + theme_void() + 
     scale_color_manual(values=assign_colors(paste0(latent_adata$obs$timepoint, '_', latent_adata$obs$renamed_GT_labels),
                                                    latent_adata$obs$spaVAE_pred_labels)) +
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (is.null(g_total)) {
         g_total = g
     } else {
         g_total = g_total + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaVAE_prediction.png')), height=4, width=10)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaVAE_prediction.pdf')), height=4, width=10)
 
 #spatialPCA_latent = read_h5ad(file.path(result_dir, 'explore_spatialPCA', 'simulation_results', sim_comb, 'prediction_adata.h5ad'))
 #latent_adata$obs$spatialPCA_pred_labels = spatialPCA_latent$obs[latent_adata$obs_names, 'pred_labels']
@@ -240,8 +240,8 @@ g_list = NULL
 # for (variable in c('timepoint', 'celltype', 'renamed_GT_labels', 'spaDOT_pred_labels')) {
 for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
     g = ggplot(latent_adata$obs, aes(x=spaDOT_umap1, y=spaDOT_umap2, color=!!sym(variable))) + geom_point(size=0.1, shape=19) + theme_pubr() + 
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL)) + 
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL)) + 
     labs(x = 'SpaDOT_UMAP1', y = 'SpaDOT_UMAP2')
     if (variable == 'renamed_GT_labels') {
         g = g + scale_color_manual(values=GT_custom_palette())
@@ -255,7 +255,7 @@ for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
         g_list = g_list + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaDOT_umap_all.png')), g_list, height=4, width=8)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaDOT_umap_all.pdf')), g_list, height=4, width=8)
 
 umap_result = umap(spatiAlign_latent[latent_adata$obs_names]$obsm$correct)
 latent_adata$obs$spatiAlign_umap1 = umap_result$layout[,1]
@@ -264,8 +264,8 @@ latent_adata$obs$spatiAlign_final_pred_labels = paste0(latent_adata$obs$timepoin
 g_list = NULL
 for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
     g = ggplot(latent_adata$obs, aes(x=spatiAlign_umap1, y=spatiAlign_umap2, color=!!sym(variable))) + geom_point(size=0.1, shape=19, alpha=0.3) + theme_pubr() + 
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (variable == 'renamed_GT_labels') {
         g = g + scale_color_manual(values=GT_custom_palette())
     }
@@ -275,7 +275,7 @@ for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
         g_list = g_list + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spatiAlign_umap_all.png')), g_list, height=4, width=8)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spatiAlign_umap_all.pdf')), g_list, height=4, width=8)
 
 umap_result = umap(graphST_latent[latent_adata$obs_names]$obsm$emb)
 latent_adata$obs$graphST_umap1 = umap_result$layout[,1]
@@ -284,8 +284,8 @@ latent_adata$obs$graphST_final_pred_labels = paste0(latent_adata$obs$timepoint, 
 g_list = NULL
 for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
     g = ggplot(latent_adata$obs, aes(x=graphST_umap1, y=graphST_umap2, color=!!sym(variable))) + geom_point(size=0.1, shape=19) + theme_pubr() + 
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (variable == 'renamed_GT_labels') {
         g = g + scale_color_manual(values=GT_custom_palette())
     }
@@ -295,7 +295,7 @@ for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
         g_list = g_list + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_graphST_umap_all.png')), g_list, height=4, width=8)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_graphST_umap_all.pdf')), g_list, height=4, width=8)
 
 umap_result = umap(spaVAE_latent[latent_adata$obs_names]$X)
 latent_adata$obs$spaVAE_umap1 = umap_result$layout[,1]
@@ -304,8 +304,8 @@ latent_adata$obs$spaVAE_final_pred_labels = paste0(latent_adata$obs$timepoint, '
 g_list = NULL
 for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
     g = ggplot(latent_adata$obs, aes(x=spaVAE_umap1, y=spaVAE_umap2, color=!!sym(variable))) + geom_point(size=0.1, shape=19) + theme_pubr() + 
-    theme(legend.position = "bottom") + 
-    guides(color = guide_legend(ncol = 3, title=NULL))
+    theme(legend.position = "bottom", legend.text=element_text(size = 14)) + 
+    guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
     if (variable == 'renamed_GT_labels') {
         g = g + scale_color_manual(values=GT_custom_palette())
     }
@@ -315,7 +315,7 @@ for (variable in c('timepoint', 'celltype', 'renamed_GT_labels')) {
         g_list = g_list + g
     }
 }
-ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaVAE_umap_all.png')), g_list, height=4, width=8)
+ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaVAE_umap_all.pdf')), g_list, height=4, width=8)
 
 
 # tsne_result = Rtsne(latent_adata$X)
@@ -428,15 +428,15 @@ for (sim_comb in c('1993/20_30', '1993/30_30', '1993/20_50', '1993/30_50')) {
         g = ggplot(subset(latent_adata$obs, timepoint == tp), aes(x=pixel_x, y=pixel_y, color=spaDOT_pred_labels)) + 
         geom_point() + theme_void() + 
         scale_color_manual(values=custome_palette_list[[sim_comb]]) + 
-        theme(legend.position = "bottom") + 
-        guides(color = guide_legend(ncol = 3, title=NULL))
+        theme(legend.position = "bottom", legend.text = element_text(size = 14)) + 
+        guides(color = guide_legend(ncol = 3, override.aes = list(size = 3), title=NULL))
         if (is.null(g_total)) {
             g_total = g
         } else {
             g_total = g_total + g
         }
     }
-    ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaDOT_prediction.png')), height=4, width=10)
+    ggsave(file.path(downstream_dir, paste0(gsub('/', '-', sim_comb), '_spaDOT_prediction.pdf')), height=4, width=10)
 
     # plot OT heatmap
     timepoints = as.vector(unique(latent_adata$obs$timepoint))

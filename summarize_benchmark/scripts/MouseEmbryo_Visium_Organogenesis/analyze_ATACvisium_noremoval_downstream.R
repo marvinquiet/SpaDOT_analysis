@@ -45,7 +45,7 @@ latent_adata$obs = latent_adata$obs %>%
     mutate(pixel_y = -pixel_x_bak) 
 
 # ground truth
-plot_pred_label(latent_adata$obs, color_col='true_labels', color_legend_title='Region Annotation', file_name=file.path(spatial_layout_dir, 'ground_truth.pdf'))
+plot_pred_label(latent_adata$obs, color_col='true_labels', color_legend_title='Region Annotation', file_name=file.path(spatial_layout_dir, 'ground_truth.pdf'), width=9, height=3)
 
 
 # set color palette for different timepoint and plot spaDOT prediction
@@ -185,9 +185,13 @@ for (metric in unique(domain_metrics_df$index)) {
     }
     timepoint_metric_df = metric_df[metric_df$timepoint != 'avg', ]
     p = ggplot() +
-        geom_point(data=avg_metric_df, aes(x=method, y=value, color=method, group=method), size=6) +
+        geom_hline(yintercept = avg_metric_df$value[avg_metric_df$method == "SpaDOT"],
+           linetype = "dashed",
+           color = customized_method_colors["SpaDOT"],
+           size = 1) + 
+        geom_point(data=timepoint_metric_df, aes(x=method, y=value, group=timepoint, shape=timepoint),size=3, alpha=0.3) +
+        geom_point(data=avg_metric_df, aes(x=method, y=value, color=method, group=method), size=6, alpha=0.8) +
         scale_color_manual(values=customized_method_colors) + 
-        geom_point(data=timepoint_metric_df, aes(x=method, y=value, group=timepoint, shape=timepoint),size=3, alpha=0.5) +
         theme_pubr() +
         theme(axis.text.x = element_blank()) + xlab(NULL) + ylab(metric)
     p = p + guides(color = guide_legend(nrow = 3, title=NULL), shape=guide_legend(nrow=3, title=NULL))
@@ -198,7 +202,7 @@ for (metric in unique(domain_metrics_df$index)) {
 }
 write.csv(domain_metrics_df, file.path(dirname(spatial_layout_dir), "SupplementaryTable4_metrics.csv"), row.names=F, quote=F)
 
-
+q()
 
 ## derive cluster specific genes
 data_dir = file.path('/media/sda/wenjinma/data/spatial_scRNAseq_GSE214989')

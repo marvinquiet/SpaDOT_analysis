@@ -22,6 +22,13 @@ dir.create(spatial_layout_dir, showWarnings = FALSE, recursive = TRUE)
 downstream_dir = file.path(result_dir, "summarize_benchmark/figures/ChickenHeart_figures/ChickenHeart_downstream")
 dir.create(downstream_dir, showWarnings = FALSE, recursive = TRUE)
 latent_adata = read_h5ad(file.path(result_dir, 'explore_SpaDOT', 'ChickenHeart_results', 'prediction_adata.h5ad'))
+latent_adata$obs$pred_labels = latent_adata$obs$kmeans
+
+# --- for plotting
+levels(latent_adata$obs$true_labels)[
+                                       levels(latent_adata$obs$true_labels) ==
+                                             "Compact LV and \ninter-ventricular septum"
+                                         ] <- "Compact LV and \ninter-ventricular\nseptum"
 
 
 annotations = unique(latent_adata$obs$true_labels)
@@ -93,7 +100,7 @@ tp_color_palette = c("1"=unname(customized_color_palette['Epicardium- like']),
 "1-1"=unname(customized_color_palette['Epicardium- like']),
 "2"=unname(customized_color_palette['Outflow tract']),
 "3"=unname(customized_color_palette['Ventricle']),
-"3-1"=unname(customized_color_palette['Compact LV and \ninter-ventricular septum']),
+"3-1"=unname(customized_color_palette['Compact LV and \ninter-ventricular\nseptum']),
 "3-2"=unname(customized_color_palette['Trabecular LV and \nendocardium']),
 "3-3"=unname(customized_color_palette['Right ventricle']),
 "4"=unname(customized_color_palette['Atria']),
@@ -138,65 +145,65 @@ plot_pred_label(latent_adata, color_col='spaDOT_pred_labels', file_name=file.pat
 # --- plot OT heatmap
 timepoints = as.vector(unique(latent_adata$obs$timepoint))
 timepoints = sort(timepoints)
-plot_OT_heatmap(timepoints, 'spaDOT', file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results'), tp_color_palette=tp_color_palette)
+plot_OT_heatmap(timepoints, 'spaDOT', file.path('/net/zootopia/disk1/wenjinma/minicluster/minicluster_backup_06102025/wenjinma/projects/spatialATAC-explore', 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results'), tp_color_palette=tp_color_palette)
 
 # --- load all methods's results
 # spatialPCA
 spatialPCA_latent = read_h5ad(file.path(result_dir, 'explore_spatialPCA', 'ChickenHeart_results', 'prediction_adata.h5ad'))
 spatialPCA_latent$obs_names = paste0(spatialPCA_latent$obs_names, '_', spatialPCA_latent$obs$timepoint)
-latent_adata$obs$spatialPCA_pred_labels = spatialPCA_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='spatialPCA_pred_labels', file_name=file.path(spatial_layout_dir, 'spatialPCA_prediction.png'))
+latent_adata$obs$spatialPCA_pred_labels = spatialPCA_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='spatialPCA_pred_labels', file_name=file.path(spatial_layout_dir, 'spatialPCA_prediction.pdf'))
 
 # GraphST
 GraphST_latent = read_h5ad(file.path(result_dir, 'explore_GraphST', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$GraphST_pred_labels = GraphST_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='GraphST_pred_labels', file_name=file.path(spatial_layout_dir, 'GraphST_prediction.png'))
+latent_adata$obs$GraphST_pred_labels = GraphST_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='GraphST_pred_labels', file_name=file.path(spatial_layout_dir, 'GraphST_prediction.pdf'))
 
 # SEDR
 SEDR_latent = read_h5ad(file.path(result_dir, 'explore_SEDR', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$SEDR_pred_labels = SEDR_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='SEDR_pred_labels', file_name=file.path(spatial_layout_dir, 'SEDR_prediction.png'))
+latent_adata$obs$SEDR_pred_labels = SEDR_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='SEDR_pred_labels', file_name=file.path(spatial_layout_dir, 'SEDR_prediction.pdf'))
 
 # spaGCN
 spaGCN_latent = read_h5ad(file.path(result_dir, 'explore_spaGCN', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$spaGCN_pred_labels = spaGCN_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='spaGCN_pred_labels', file_name=file.path(spatial_layout_dir, 'spaGCN_prediction.png'))
+latent_adata$obs$spaGCN_pred_labels = spaGCN_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='spaGCN_pred_labels', file_name=file.path(spatial_layout_dir, 'spaGCN_prediction.pdf'))
 
 # spaVAE
 spaVAE_latent = read_h5ad(file.path(result_dir, 'explore_spaVAE', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$spaVAE_pred_labels = spaVAE_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='spaVAE_pred_labels', file_name=file.path(spatial_layout_dir, 'spaVAE_prediction.png'))
+latent_adata$obs$spaVAE_pred_labels = spaVAE_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='spaVAE_pred_labels', file_name=file.path(spatial_layout_dir, 'spaVAE_prediction.pdf'))
 
 # STAligner
 STAligner_latent = read_h5ad(file.path(result_dir, 'explore_STAligner', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$STAligner_pred_labels = STAligner_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='STAligner_pred_labels', file_name=file.path(spatial_layout_dir, 'STAligner_prediction.png'))
+latent_adata$obs$STAligner_pred_labels = STAligner_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='STAligner_pred_labels', file_name=file.path(spatial_layout_dir, 'STAligner_prediction.pdf'))
 
 # PRECAST
 PRECAST_latent = read_h5ad(file.path(result_dir, 'explore_PRECAST', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$PRECAST_pred_labels = PRECAST_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='PRECAST_pred_labels', file_name=file.path(spatial_layout_dir, 'PRECAST_prediction.png'))
+latent_adata$obs$PRECAST_pred_labels = PRECAST_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='PRECAST_pred_labels', file_name=file.path(spatial_layout_dir, 'PRECAST_prediction.pdf'))
 
 # spatiAlign
 spatiAlign_latent = read_h5ad(file.path(result_dir, 'explore_spatiAlign', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$spatiAlign_pred_labels = spatiAlign_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='spatiAlign_pred_labels', file_name=file.path(spatial_layout_dir, 'spatiAlign_prediction.png'))
+latent_adata$obs$spatiAlign_pred_labels = spatiAlign_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='spatiAlign_pred_labels', file_name=file.path(spatial_layout_dir, 'spatiAlign_prediction.pdf'))
 
 # SPIRAL
 SPIRAL_latent = read_h5ad(file.path(result_dir, 'explore_SPIRAL', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$SPIRAL_pred_labels = SPIRAL_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='SPIRAL_pred_labels', file_name=file.path(spatial_layout_dir, 'SPIRAL_prediction.png'))
+latent_adata$obs$SPIRAL_pred_labels = SPIRAL_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='SPIRAL_pred_labels', file_name=file.path(spatial_layout_dir, 'SPIRAL_prediction.pdf'))
 
 # STADIA
 STADIA_latent = read_h5ad(file.path(result_dir, 'explore_STADIA', 'ChickenHeart_results', 'prediction_adata.h5ad'))
 STADIA_latent$obs_names = sub("^[^.]*\\.", "", STADIA_latent$obs_names)
-latent_adata$obs$STADIA_pred_labels = STADIA_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='STADIA_pred_labels', file_name=file.path(spatial_layout_dir, 'STADIA_prediction.png'))
+latent_adata$obs$STADIA_pred_labels = STADIA_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='STADIA_pred_labels', file_name=file.path(spatial_layout_dir, 'STADIA_prediction.pdf'))
 
 # STAMP 
 STAMP_latent = read_h5ad(file.path(result_dir, 'explore_STAMP', 'ChickenHeart_results', 'prediction_adata.h5ad'))
-latent_adata$obs$STAMP_pred_labels = STAMP_latent$obs[latent_adata$obs_names, 'pred_labels']
-plot_pred_label(latent_adata, color_col='STAMP_pred_labels', file_name=file.path(spatial_layout_dir, 'STAMP_prediction.png'))
+latent_adata$obs$STAMP_pred_labels = STAMP_latent$obs[latent_adata$obs_names, 'kmeans']
+plot_pred_label(latent_adata, color_col='STAMP_pred_labels', file_name=file.path(spatial_layout_dir, 'STAMP_prediction.pdf'))
 
 
 # load SVGP results
@@ -261,10 +268,10 @@ for (tp in unique(domain_metrics_df$timepoint)) {
     # tp_domain_metrics_df_wide[['1-CHAOS']] = 1 - as.numeric(tp_domain_metrics_df_wide[['CHAOS']])
     # --- edit to normalized CHAOS
     tp_domain_metrics_df_wide[['norm_CHAOS']] = as.numeric(tp_domain_metrics_df_wide[['CHAOS']])/max(as.numeric(tp_domain_metrics_df_wide[['CHAOS']]))
-    tp_domain_metrics_df_wide[['1-norm_CHAOS']] = 1 - tp_domain_metrics_df_wide[['norm_CHAOS']]
+    tp_domain_metrics_df_wide[['1-CHAOS']] = 1 - tp_domain_metrics_df_wide[['norm_CHAOS']]
     tp_domain_metrics_df_wide[['norm_median-LISI']] = as.numeric(tp_domain_metrics_df_wide[['median-LISI']])/max(as.numeric(tp_domain_metrics_df_wide[['median-LISI']]))
-    tp_domain_metrics_df_wide[['1-norm_LISI']] = 1 - tp_domain_metrics_df_wide[['norm_median-LISI']]
-    tp_domain_metrics_df_wide = as.data.frame(tp_domain_metrics_df_wide[, c('method', 'ARI', 'AMI', 'H', '1-norm_LISI', '1-PAS', '1-norm_CHAOS')])
+    tp_domain_metrics_df_wide[['1-medianLISI']] = 1 - tp_domain_metrics_df_wide[['norm_median-LISI']]
+    tp_domain_metrics_df_wide = as.data.frame(tp_domain_metrics_df_wide[, c('method', 'ARI', 'AMI', '1-CHAOS', '1-medianLISI', '1-PAS', 'H')])
     tp_domain_metrics_df_wide$ARI = as.numeric(tp_domain_metrics_df_wide$ARI)
     tp_domain_metrics_df_wide$AMI = as.numeric(tp_domain_metrics_df_wide$AMI)
     tp_domain_metrics_df_wide$H = as.numeric(tp_domain_metrics_df_wide$H)
@@ -275,9 +282,9 @@ for (tp in unique(domain_metrics_df$timepoint)) {
     tp_domain_metrics_df_wide = rbind(rep(1,6) , rep(0,6) , tp_domain_metrics_df_wide)
     colors_in = alpha(unname(customized_method_colors),0.8)
     if (tp == 'avg') {
-        png(file.path(downstream_dir, paste0(tp, '_radar.png')), width=800, height=1200)
+        pdf(file.path(downstream_dir, paste0(tp, '_radar.pdf')), width=8, height=12)
     } else {
-        png(file.path(downstream_dir, paste0(tp, '_radar.png')), width=800, height=800)
+        pdf(file.path(downstream_dir, paste0(tp, '_radar.pdf')), width=8, height=8)
     }
     par(mar = c(0.1, 0.1, 0.1, 0.1)) 
     radarchart(as.data.frame(tp_domain_metrics_df_wide), axistype=1, pcol=colors_in, #pfcol=unname(customized_method_colors),
@@ -285,7 +292,7 @@ for (tp in unique(domain_metrics_df$timepoint)) {
     cglwd=0.8, vlcex=1.8)
     if (tp == 'avg') {
         methods = as.character(levels(domain_metrics_df$method))
-        legend(x=-1, y=-1.2, legend = methods, bty = "n", pch=20 , col=unname(customized_method_colors[methods]), text.col = "black", cex=2, pt.cex=3, ncol=4)
+        legend(x=-1, y=-1.2, legend = methods, bty = "n", pch=20 , col=unname(customized_method_colors[methods]), text.col = "black", cex=2, pt.cex=3, ncol=3)
     }
     dev.off()
 }
@@ -297,9 +304,13 @@ for (metric in unique(domain_metrics_df$index)) {
     avg_metric_df = metric_df[metric_df$timepoint == 'avg', ]
     timepoint_metric_df = metric_df[metric_df$timepoint != 'avg', ]
     p = ggplot() +
-        geom_point(data=avg_metric_df, aes(x=method, y=value, color=method, group=method), size=6) +
+        geom_hline(yintercept = avg_metric_df$value[avg_metric_df$method == "SpaDOT"],
+           linetype = "dashed",
+           color = customized_method_colors["SpaDOT"],
+           size = 1) + 
+        geom_point(data=timepoint_metric_df, aes(x=method, y=value, group=timepoint, shape=timepoint),size=3, alpha=0.3) +
+        geom_point(data=avg_metric_df, aes(x=method, y=value, color=method, group=method), size=6, alpha=0.8) +
         scale_color_manual(values=customized_method_colors) + 
-        geom_point(data=timepoint_metric_df, aes(x=method, y=value, group=timepoint, shape=timepoint),size=3, alpha=0.5) +
         theme_pubr() +
         theme(axis.text.x = element_blank()) + xlab(NULL) + ylab(metric)
     p = p + guides(color = guide_legend(nrow = 4, title=NULL), shape=guide_legend(nrow=4, title=NULL))
@@ -313,7 +324,7 @@ for (metric in unique(domain_metrics_df$index)) {
 
 
 ## derive cluster specific genes
-data_dir = file.path('/media/sda/wenjinma/data/spatial_ChickenHeart')
+data_dir = file.path('/net/zootopia/disk1/wenjinma/data/spatial_ChickenHeart')
 adata = read_h5ad(file.path(data_dir, 'processed_ChickenHeart.h5ad'))
 common_cells = intersect(rownames(adata), rownames(latent_adata))
 adata = adata[common_cells]
@@ -342,7 +353,7 @@ Seurat_obj = FindVariableFeatures(Seurat_obj, selection.method = "vst", nfeature
 # ggsave(file.path(downstream_dir, 't1_dotplot.png'), height=15, width=8)
 
 # find overlap between cluster 1 and cluster 4 at Day 14
-method_result_dir = file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results')
+method_result_dir = file.path('/net/zootopia/disk1/wenjinma/minicluster/minicluster_backup_06102025/wenjinma/projects/spatialATAC-explore', 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results')
 Day14_marker = read.csv(file.path(method_result_dir, paste0('t3', '_Seurat_FindAllMarkers_original_cluster.csv')), row.names=1)
 Day14_sig_marker = Day14_marker[Day14_marker$p_val_adj < 0.05 & Day14_marker$avg_log2FC > 0, ]
 Day14_cluster1_marker = Day14_sig_marker[Day14_sig_marker$cluster == 1, 'gene']
@@ -409,7 +420,7 @@ for (gene in marker_genes) {
 
 
 # --- perform GO
-GO_analysis(timepoints, 'spaDOT', file.path(result_dir, 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results'), tp_color_palette=tp_color_palette)
+GO_analysis(timepoints, 'spaDOT', file.path('/net/zootopia/disk1/wenjinma/minicluster/minicluster_backup_06102025/wenjinma/projects/spatialATAC-explore', 'explore_GATVAE-SVGP-VAE', 'ChickenHeart_results'), tp_color_palette=tp_color_palette)
 
 # --- overlap with cluster 4 at Day14
 Day14_Seurat_obj = subset(Seurat_obj, subset=timepoint=='t3')
