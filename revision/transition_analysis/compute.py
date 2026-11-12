@@ -5,9 +5,9 @@ Install h5py, numpy, pandas, scikit-learn and threadpoolctl. Supply the final
 MouseEmbryo, ChickenHeart or AxolotlTelencephalon. X must contain the embeddings
 in original spot order, with obs columns timepoint (t0, t1, ...) and annotation.
 
-python compute.py --latents INPUT --output OUTPUT
-python score_thresholds.py --pairs OUTPUT/pairs --output SCORES
-python plot_thresholds.py --rerun SCORES --output FIGURES
+python revision/transition_analysis/compute.py --latents INPUT --output OUTPUT
+python sensitivity_analysis/threshold_sensitivity/score_thresholds.py --pairs OUTPUT/pairs --output SCORES
+python sensitivity_analysis/threshold_sensitivity/plot_thresholds.py --rerun SCORES --output FIGURES
 
 Use --domain-keys KEYS to export the display mapping with each dataset. This
 expects KEYS/DATASET/domain_key.csv with stage, domain_id, paper_label, color.

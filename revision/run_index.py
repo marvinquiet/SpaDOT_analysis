@@ -11,8 +11,9 @@ REPOSITORY = Path(__file__).resolve().parents[1]
 ANALYSES = {
     "ablation_studies/encoder_ablations": "Note 7, S39–S40: depth and replacement models, Moran's I and Jacobian sensitivity",
     "ablation_studies/loss_ablations": "Table S8 and related panels: architecture and loss controls",
-    "revision/kernel_sensitivity": "S47: kernel-scale fits, paper-setting WOT scoring, aggregation and figures",
-    "revision/transition_analysis": "Note 8, S41, S18 and Figs. 3c–5c: spot OT, transition evaluation and rendering",
+    "sensitivity_analysis/kernel_sensitivity": "S47: kernel-scale fits, paper-setting WOT scoring, aggregation and figures",
+    "sensitivity_analysis/threshold_sensitivity": "Note 8 and S41: transition-score threshold sensitivity",
+    "revision/transition_analysis": "S18 and Figs. 3c–5c: shared spot OT, transition evaluation and rendering",
     "revision/single_slice": "Note 9, S42–S46 and Table S9: seven independent-slice workflows and comparisons",
     "revision/real_data_figures": "Figs. 3–5 and related supplement panels: matched predictions, metrics and visualizations",
 }
