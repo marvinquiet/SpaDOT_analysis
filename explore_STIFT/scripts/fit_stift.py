@@ -180,12 +180,20 @@ def fit(args):
 
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
+def main(dataset=None):
+    description = __doc__ if dataset is None else (
+        f"Fit STIFT on {dataset} using the pinned upstream ARTISTA tutorial. "
+        "See scripts/fit_stift.py for input and environment details."
+    )
+    parser = argparse.ArgumentParser(description=description,
+                                     formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--stift-source", type=Path, required=True)
     parser.add_argument("--tutorial", type=Path, required=True)
     parser.add_argument("--input", type=Path, required=True)
-    parser.add_argument("--dataset", choices=(*REAL_SHAPES, *SIMULATIONS), required=True)
+    if dataset is None:
+        parser.add_argument("--dataset", choices=(*REAL_SHAPES, *SIMULATIONS), required=True)
+    else:
+        parser.set_defaults(dataset=dataset)
     parser.add_argument("--output", type=Path, required=True)
     fit(parser.parse_args())
 

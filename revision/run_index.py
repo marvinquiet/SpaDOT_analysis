@@ -14,8 +14,10 @@ ANALYSES = {
     "kernel_sensitivity": "S47: kernel-scale fits, paper-setting WOT scoring, aggregation and figures",
     "transition_analysis": "Note 8, S41, S18 and Figs. 3c–5c: spot OT, transition evaluation and rendering",
     "single_slice": "Note 9, S42–S46 and Table S9: seven independent-slice workflows and comparisons",
-    "stift": "STIFT on the three real datasets and two simulation strategies",
     "real_data_figures": "Figs. 3–5 and related supplement panels: matched predictions, metrics and visualizations",
+}
+METHODS = {
+    "STIFT (three real datasets and two simulation strategies)": "explore_STIFT/",
 }
 EXISTING = {
     "Harmony comparisons (S30, S34–S37)": "summarize_benchmark/scripts/analyze_Harmony_integrated_latent_*.py",
@@ -32,6 +34,9 @@ def main():
         for script in sorted(path.rglob("*")):
             if script.suffix in {".py", ".R", ".sh"}:
                 print(f"  {script.relative_to(REVISION.parent)}")
+    print("\nMethod-specific workflows")
+    for description, directory in METHODS.items():
+        print(f"  {description}\n    {directory}")
     print("\nExisting workflows")
     for label, pattern in EXISTING.items():
         print(f"  {label}")

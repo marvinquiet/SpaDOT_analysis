@@ -1,3 +1,11 @@
+"""Render the STIFT spatial predictions used in the manuscript.
+
+Usage: python visualize_STIFT_spatial.py INPUT_ROOT OUTPUT_DIR CHICKEN_DAY4_CSV
+
+INPUT_ROOT contains the matched prediction tables and provenance from the
+three dataset-specific benchmark exports. CHICKEN_DAY4_CSV supplies the
+reference coordinates for the Day 4 spots.
+"""
 from collections import defaultdict
 from csv import DictReader
 from hashlib import sha256
