@@ -65,9 +65,9 @@ for (seed in simulation_seeds) {
     for (comb in simulation_combs) {
         for (method in methods) {
             if (opt$mixedNPCs) {
-                pred_adata = read_h5ad(file.path(result_dir, paste0('explore_', method), paste0('simulation_prop_results_mixedNPCs_DEG', opt$DEG), paste0(seed, '/', comb), 'prediction_adata.h5ad'))
+                pred_adata = read_h5ad(file.path(result_dir, "benchmark_study", paste0('explore_', method), paste0('simulation_prop_results_mixedNPCs_DEG', opt$DEG), paste0(seed, '/', comb), 'prediction_adata.h5ad'))
             } else {
-                pred_adata = read_h5ad(file.path(result_dir, paste0('explore_', method), paste0('simulation_prop_results_DEG', opt$DEG), paste0(seed, '/', comb), 'prediction_adata.h5ad'))
+                pred_adata = read_h5ad(file.path(result_dir, "benchmark_study", paste0('explore_', method), paste0('simulation_prop_results_DEG', opt$DEG), paste0(seed, '/', comb), 'prediction_adata.h5ad'))
             }
             
             for (tp in unique(pred_adata$obs$timepoint)) {

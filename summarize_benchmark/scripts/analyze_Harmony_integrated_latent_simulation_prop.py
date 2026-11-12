@@ -9,7 +9,9 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from scipy.stats import ttest_rel
 
-result_dir = "/net/mulan/home/wenjinma/projects/SpaDOT_analysis/explore_SpaDOT"
+repository_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+result_dir = os.path.join(repository_dir, "benchmark_study", "explore_SpaDOT")
+legacy_result_dir = os.path.join(repository_dir, "explore_SpaDOT")
 
 def run_OT(latent_adata, prefix=''):
     ot_model = wot.ot.OTModel(latent_adata, epsilon = 0.01, lambda1 = 0.1,lambda2 = 5, growth_iters=3) # imbalanced OT with imbalanced row and comparatiely balanced target
@@ -45,7 +47,10 @@ simulation_combinations = ["DEG100/1993/", "DEG200/1993/", "DEG500/1993/"]
 
 for comb in simulation_combinations:
     for prop in [0.5, 0.6, 0.7, 0.8, 0.9]:
-        comb_dir = f"{result_dir}/simulation_prop_results_mixedNPCs_{comb}/prop_{prop}"
+        relative = f"simulation_prop_results_mixedNPCs_{comb}/prop_{prop}"
+        comb_dir = os.path.join(result_dir, relative)
+        if not os.path.isfile(os.path.join(comb_dir, "prediction_adata.h5ad")):
+            comb_dir = os.path.join(legacy_result_dir, relative)
         latent_adata = anndata.read_h5ad(f"{comb_dir}/prediction_adata.h5ad")
         latent_adata.obsm['X_latent'] = latent_adata.X
         sc.pp.neighbors(
