@@ -1,0 +1,13 @@
+args <- commandArgs(trailingOnly = TRUE)
+if (length(args) != 3L) stop("usage: sedr_mclust.R latent.csv K labels.csv")
+if (!requireNamespace("mclust", quietly = TRUE)) stop("mclust package missing")
+suppressPackageStartupMessages(library(mclust))
+set.seed(2023)
+embedding <- as.matrix(read.csv(args[[1]], header = FALSE, check.names = FALSE))
+k <- as.integer(args[[2]])
+if (!is.finite(k) || nrow(embedding) <= k || any(!is.finite(embedding)))
+    stop("Invalid embedding or cluster count")
+fit <- Mclust(embedding, G = k, modelNames = "EEE")
+if (is.null(fit) || is.null(fit$classification)) stop("Mclust failed")
+write.table(as.integer(fit$classification), args[[3]], sep = ",",
+            row.names = FALSE, col.names = FALSE)
