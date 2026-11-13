@@ -1,7 +1,7 @@
 """Score annotation and predicted-domain OT at the S41 threshold grid.
 
-Requires NumPy. Pass the pairs directory written by
-revision/transition_analysis/compute.py and a new
+Requires NumPy. Pass the pairs directory written by the Axolotl
+benchmark_OT_transition_table.py compute command with --dataset all, and a new
 output directory. Predicted clusters inherit their majority annotation for
 reference-edge evaluation. Dataset means weight each transition equally.
 The overall curves weight the three datasets equally.
@@ -15,8 +15,8 @@ from pathlib import Path
 import numpy as np
 
 # Use the reference graph shared by the transition and single-slice benchmarks.
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "revision"))
-from transition_analysis.reference_edges import edges
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "summarize_benchmark" / "scripts"))
+from transition_reference_edges import edges
 
 STAGES = {
     "ChickenHeart": ("Day 4", "Day 7", "Day 10", "Day 14"),

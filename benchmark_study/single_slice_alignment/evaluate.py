@@ -217,8 +217,8 @@ def evaluate(args):
     else:
         if args.case not in {"MouseEmbryo", "ChickenHeart", "AxolotlTelencephalon"}:
             raise ValueError("Provide --edges for a case outside the three real benchmark datasets")
-        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "revision"))
-        from transition_analysis.reference_edges import edges as reference_edges
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "summarize_benchmark" / "scripts"))
+        from transition_reference_edges import edges as reference_edges
 
         regions = set(raw_obs.annotation.map(canonical))
         edges = {f"{left}_{right}": reference_edges(args.case, i, regions)

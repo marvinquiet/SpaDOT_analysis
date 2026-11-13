@@ -13,7 +13,6 @@ ANALYSES = {
     "ablation_studies/loss_ablations": "Table S8 and related panels: architecture and loss controls",
     "sensitivity_analysis/kernel_sensitivity": "S47: kernel-scale fits, paper-setting WOT scoring, aggregation and figures",
     "sensitivity_analysis/threshold_sensitivity": "Note 8 and S41: transition-score threshold sensitivity",
-    "revision/transition_analysis": "S18 and Figs. 3c–5c: shared spot OT, transition evaluation and rendering",
     "benchmark_study/single_slice_alignment": "Note 9, S42–S46 and Table S9: seven independent-slice workflows and comparisons",
 }
 METHODS = {
@@ -23,7 +22,8 @@ EXISTING = {
     "Harmony comparisons (S30, S34–S37)": "summarize_benchmark/scripts/analyze_Harmony_integrated_latent_*.py",
     "Native vs K-means (S31)": "summarize_benchmark/scripts/*/*_clustering.R",
     "Real-data metrics and figures (Figs. 3–5)": "summarize_benchmark/scripts/",
-    "Original transition comparators": "summarize_benchmark/scripts/*/benchmark_OT_transition_table.py",
+    "Spot OT and transition benchmarks (S18 and Figs. 3c–5c)": "summarize_benchmark/scripts/*/benchmark_OT_transition_table.py",
+    "Transition rendering and STIFT comparison": "summarize_benchmark/scripts/{render_transitions.R,merge_transition_benchmark.py}",
 }
 
 

@@ -1,7 +1,7 @@
 # Run the existing dataset-specific plot_OT_heatmap() helpers for Figures 3c–5c.
 # Rscript render_transitions.R INPUT OUTPUT [BENCHMARK_SCRIPTS]
-# INPUT is compute.py's output/inputs directory, including paper display keys.
-# BENCHMARK_SCRIPTS defaults to the manuscript plotting helper snapshots shipped here.
+# INPUT is the paper OT command's output/inputs directory, including display keys.
+# BENCHMARK_SCRIPTS defaults to the existing dataset scripts next to this file.
 args <- commandArgs(trailingOnly = TRUE)
 if (!length(args) %in% c(2L, 3L)) {
     stop("Usage: Rscript render_transitions.R INPUT OUTPUT [BENCHMARK_SCRIPTS]")
@@ -9,7 +9,7 @@ if (!length(args) %in% c(2L, 3L)) {
 inputs <- normalizePath(args[1])
 output <- args[2]
 script_file <- sub("^--file=", "", grep("^--file=", commandArgs(), value = TRUE))
-scripts <- if (length(args) == 3L) args[3] else file.path(dirname(script_file), "plot_helpers")
+scripts <- if (length(args) == 3L) args[3] else dirname(script_file)
 scripts <- normalizePath(scripts)
 suppressPackageStartupMessages({
     library(ggplot2)

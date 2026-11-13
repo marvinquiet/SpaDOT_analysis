@@ -1,24 +1,12 @@
-"""Compute paper-setting spot OT and domain tables for Figures 3c–5c and S41.
+"""Shared spot OT and domain table computation for Figures 3c–5c and S41.
 
-Install h5py, numpy, pandas, scikit-learn and threadpoolctl. Supply the final
-20-dimensional latent.h5ad at INPUT/DATASET/latent.h5ad, where DATASET is
-MouseEmbryo, ChickenHeart or AxolotlTelencephalon. X must contain the embeddings
-in original spot order, with obs columns timepoint (t0, t1, ...) and annotation.
-
-python revision/transition_analysis/compute.py --latents INPUT --output OUTPUT
-python sensitivity_analysis/threshold_sensitivity/score_thresholds.py --pairs OUTPUT/pairs --output SCORES
-python sensitivity_analysis/threshold_sensitivity/plot_thresholds.py --rerun SCORES --output FIGURES
-
-Use --domain-keys KEYS to export the display mapping with each dataset. This
-expects KEYS/DATASET/domain_key.csv with stage, domain_id, paper_label, color.
-The solver snapshots reproduce the original and finite-log duality-gap variants
-used in the audited threshold rerun. The latter is used for Chicken Day 7–10.
+Use the compute subcommand of the Axolotl benchmark entry point. The
+published SpaDOT 1.0.7 solver reproduces the archived paper-setting plans,
+including the Chicken Heart pair that needed a log-domain duality gap.
 """
 
-import argparse
 import os
 import sys
-from pathlib import Path
 from shutil import copyfile
 
 for variable in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
@@ -30,9 +18,6 @@ import pandas as pd
 from sklearn.cluster import KMeans
 from sklearn.metrics import pairwise_distances
 from threadpoolctl import threadpool_limits
-
-import ot_solver_original
-import ot_solver_stable_gap
 
 DATASETS = {
     "ChickenHeart": (5, 7, 7, 6),
@@ -68,11 +53,12 @@ def solve(embedding_a, embedding_b, solver):
     config = dict(solver.default_config, **PARAMETERS)
     growth = np.ones(len(embedding_a))
     diagnostics = []
+    transport = solver.optimal_transport_duality_gap
     for _ in range(PARAMETERS["growth_iters"]):
         diagnostic = {}
 
         def capture(frame, event, _):
-            if event == "return" and frame.f_code is solver.optimal_transport_duality_gap.__code__:
+            if event == "return" and frame.f_code is transport.__code__:
                 for key in ("duality_gap", "current_iter", "e"):
                     if key in frame.f_locals:
                         diagnostic[key] = float(frame.f_locals[key])
@@ -81,7 +67,7 @@ def solve(embedding_a, embedding_b, solver):
         sys.setprofile(capture)
         try:
             with threadpool_limits(limits=1):
-                plan = solver.optimal_transport_duality_gap(C=cost, G=growth, **config)
+                plan = transport(C=cost, G=growth, **config)
         finally:
             sys.setprofile(previous)
         if (not np.isfinite(plan).all() or (plan < 0).any() or plan.sum() <= 0
@@ -122,7 +108,7 @@ def conditionals(mass):
     return forward, reverse, np.minimum(forward, reverse)
 
 
-def run_dataset(dataset, clusters, args):
+def run_dataset(dataset, clusters, args, solver):
     with h5py.File(args.latents / dataset / "latent.h5ad") as file:
         embedding = file["X"][:]
         time = read_obs(file, "timepoint")
@@ -140,8 +126,6 @@ def run_dataset(dataset, clusters, args):
         pair = f"t{i}_t{i+1}"
         dest = args.output / "pairs" / dataset / pair
         dest.mkdir(parents=True)
-        stable = dataset == "ChickenHeart" and i == 1
-        solver = ot_solver_stable_gap if stable else ot_solver_original
         plan, diagnostics = solve(source_x, target_x, solver)
         if args.save_spot_plans:
             np.save(dest / "spot_growth3.npy", plan, allow_pickle=False)
@@ -160,19 +144,11 @@ def run_dataset(dataset, clusters, args):
         print(f"{dataset} {pair} completed", flush=True)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--latents", type=Path, required=True)
-    parser.add_argument("--output", type=Path, required=True)
-    parser.add_argument("--dataset", choices=DATASETS, help="Compute a single dataset instead of all three.")
-    parser.add_argument("--domain-keys", type=Path)
-    parser.add_argument("--save-spot-plans", action="store_true")
-    args = parser.parse_args()
+def compute_tables(args):
+    # Use the low-level solver because the package's training wrapper returns the first map.
+    from SpaDOT.utils.OT_loss import ot_solvers
+
     args.output.mkdir(parents=True, exist_ok=False)
     for dataset, clusters in DATASETS.items():
-        if args.dataset is None or dataset == args.dataset:
-            run_dataset(dataset, clusters, args)
-
-
-if __name__ == "__main__":
-    main()
+        if args.dataset == "all" or dataset == args.dataset:
+            run_dataset(dataset, clusters, args, ot_solvers)
